@@ -127,7 +127,7 @@ if ($serverQueue.Count -gt 0)
   # Mark 'origin' servers as recovered 
   foreach ($server in $serverQueue)
   {
-    $serverState = Update-TenantResourceRecoveryState -Catalog $tenantCatalog -UpdateAction "endRecovery" -ServerName ($_ -split $config.RecoverySuffix)[0]
+    $serverState = Update-TenantResourceRecoveryState -Catalog $tenantCatalog -UpdateAction "endRecovery" -ServerName ($server -split $config.RecoverySuffix)[0]
   }
   $recoveredServers += $serverQueue.Length
 }

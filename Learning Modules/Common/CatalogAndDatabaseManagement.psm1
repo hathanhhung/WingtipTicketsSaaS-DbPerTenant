@@ -30,8 +30,8 @@ function Add-ExtendedTenantMetaDataToCatalog
         [parameter(Mandatory=$true)]
         [string]$TenantName,
 
-        [parameter(Mandatory=$true)]
-        [string]$TenantServicePlan
+        [parameter(Mandatory=$false)]
+        [string]$TenantServicePlan = 'standard'
     )
 
     $config = Get-Configuration
@@ -730,6 +730,38 @@ function Get-TenantAlias
         Write-Error "No alias exists for tenant '$TenantName'. Use the Set-TenantAlias function to create one."
         return $null
     }
+}
+
+<#
+.SYNOPSIS
+    Returns the service plan of a given tenant
+#>
+function Get-TenantServicePlan
+{
+    param (
+        [parameter(Mandatory=$true)]
+        [object]$Catalog,
+
+        [parameter(Mandatory=$false)]
+        [string]$TenantName
+    )
+
+    $config = Get-Configuration
+
+    $tenantKey = Get-TenantKey $TenantName
+    $tenantHexId = (Get-TenantRawKey -TenantKey $TenantKey).RawKeyHexString
+    $commandText = "SELECT ServicePlan FROM [dbo].[TenantsExtended] WHERE TenantId = $tenantHexId" 
+    
+    $tenantServicePlan = Invoke-SqlAzureWithRetry `
+                            -ServerInstance $Catalog.FullyQualifiedServerName `
+                            -Database $Catalog.Database.DatabaseName `
+                            -Query $commandText `
+                            -UserName $config.CatalogAdminUserName `
+                            -Password $config.CatalogAdminPassword `
+                            -ConnectionTimeout 30 `
+                            -QueryTimeout 15 `
+
+    return $tenantServicePlan
 }
 
 <#
@@ -1764,11 +1796,14 @@ function Remove-Tenant
 
     # Delete tenant database alias
     $tenantAliasName = ($tenantShard.Location.Server).Split('.')[0]
-    Remove-AzureRMSqlServerDNSAlias –ResourceGroupName $tenantServer.ResourceGroupName `
-        -ServerDNSAliasName $tenantAliasName `
-        -ServerName $tenantServerName `
-        -ErrorAction SilentlyContinue `
-        >$null 
+    if ($tenantAliasName -match "-alias$")
+    {
+        Remove-AzureRMSqlServerDNSAlias –ResourceGroupName $tenantServer.ResourceGroupName `
+            -ServerDNSAliasName $tenantAliasName `
+            -ServerName $tenantServerName `
+            -ErrorAction SilentlyContinue `
+            >$null 
+    }
 
     # Clear local DNS cache to remove tenant alias 
     Clear-DnsClientCache >$null    
@@ -1957,24 +1992,45 @@ function Set-DnsAlias
     # Check if input alias exists
     $aliasExists = Test-IfDnsAlias $fullyQualifiedDNSAlias 
 
-    # Remove existing alias if it exists already 
+    # # Remove existing alias if it exists already 
+    # if ($aliasExists)
+    # {
+    #     Remove-AzureRMSqlServerDNSAlias `
+    #         -ResourceGroupName $OldResourceGroupName `
+    #         -ServerName $OldServerName `
+    #         -ServerDNSAliasName $ServerDNSAlias `
+    #         -Force `
+    #         -ErrorAction SilentlyContinue `
+    #         >$null
+    # }
+   
+    # # Create new DNS alias using provided parameters 
+    # New-AzureRmSqlServerDNSAlias `
+    #     -ResourceGroupName $ResourceGroupName `
+    #     -ServerName $ServerName `
+    #     -ServerDNSAliasName $ServerDNSAlias `
+    #     >$null
+
+    # Update alias if it exists already 
     if ($aliasExists)
     {
-        Remove-AzureRMSqlServerDNSAlias `
-            -ResourceGroupName $OldResourceGroupName `
-            -ServerName $OldServerName `
+        $subscriptionId = Get-SubscriptionId
+        Set-AzureRmSqlServerDNSAlias `
+            -ResourceGroupName $ResourceGroupName `
+            -NewServerName $ServerName `
             -ServerDNSAliasName $ServerDNSAlias `
-            -Force `
-            -ErrorAction SilentlyContinue `
+            -OldServerResourceGroupName $OldResourceGroupName `
+            -OldServerName $OldServerName `
+            -OldServerSubscriptionId $subscriptionId
+    }
+    else
+    {
+        New-AzureRmSqlServerDNSAlias `
+            -ResourceGroupName $ResourceGroupName `
+            -ServerName $ServerName `
+            -ServerDNSAliasName $ServerDNSAlias `
             >$null
     }
-   
-    # Create new DNS alias using provided parameters 
-    New-AzureRmSqlServerDNSAlias `
-        -ResourceGroupName $ResourceGroupName `
-        -ServerName $ServerName `
-        -ServerDNSAliasName $ServerDNSAlias `
-        >$null
 
     # Poll DNS for changes if requested 
     if ($PollDnsUpdate)
@@ -2574,6 +2630,9 @@ function Update-TenantEntryInCatalog
 
     if ($RequestedTenantServerName)
     {
+        # Get current service plan of tenant
+        $servicePlan = (Get-TenantServicePlan -Catalog $Catalog -TenantName $TenantName).ServicePlan.ToLower()
+
         # Remove tenant entry from catalog database
         Remove-Tenant -Catalog $Catalog -TenantKey $tenantObject.Key -KeepTenantDatabase
 
@@ -2598,7 +2657,8 @@ function Update-TenantEntryInCatalog
         Add-ExtendedTenantMetaDataToCatalog `
             -Catalog $Catalog `
             -TenantKey $tenantObject.Key `
-            -TenantName $TenantName
+            -TenantName $TenantName `
+            -TenantServicePlan $servicePlan
     }
 
 
@@ -2627,16 +2687,16 @@ function Update-TenantRecoveryState
     
     # Construct state transition dictionary for tenant object 
     $tenantRecoveryStates = @{
-        'startRecovery' = @{ "beginState" = ('n/a', 'OnlineInOrigin', 'RecoveringTenantData'); "endState" = ('RecoveringTenantData') };
-        'endRecovery' = @{ "beginState" = ('RecoveringTenantData', 'RecoveredTenantData'); "endState" = ('RecoveredTenantData') };
-        'startAliasFailoverToRecovery' = @{ "beginState" = ('RecoveredTenantData', 'MarkingTenantOnlineInRecovery'); "endState" = ('MarkingTenantOnlineInRecovery')};
-        'endAliasFailoverToRecovery' = @{ "beginState" = ('MarkingTenantOnlineInRecovery', 'OnlineInRecovery'); "endState" = "OnlineInRecovery"};
-        'startReset' = @{ "beginState" = ('RecoveringTenantData', 'RecoveredTenantData', 'MarkingTenantOnlineInRecovery', 'OnlineInRecovery', 'ResettingTenantData'); "endState" = ('ResettingTenantData') };
-        'endReset' = @{ "beginState" = ('ResettingTenantData', 'ResetTenantData'); "endState" = ('ResetTenantData') };
-        'startRepatriation' = @{ "beginState" = ('RecoveredTenantData', 'OnlineInRecovery', 'RepatriatingTenantData'); "endState" = ('RepatriatingTenantData') };
-        'endRepatriation' = @{ "beginState" = ('RepatriatingTenantData', 'RepatriatedTenantData'); "endState" = ('RepatriatedTenantData') };
-        'startAliasFailoverToOrigin' = @{ "beginState" = ('ResetTenantData', 'RepatriatedTenantData', 'MarkingTenantOnlineInOrigin'); "endState" = ('MarkingTenantOnlineInOrigin')};
-        'endAliasFailoverToOrigin' = @{ "beginState" = ('MarkingTenantOnlineInOrigin', 'OnlineInOrigin'); "endState" = ('OnlineInOrigin')};
+        'startRecovery' = @{ "beginState" = ('n/a', 'OnlineInOrigin'); "endState" = ('RecoveringTenantData') };
+        'endRecovery' = @{ "beginState" = ('RecoveringTenantData'); "endState" = ('RecoveredTenantData') };
+        'startAliasFailoverToRecovery' = @{ "beginState" = ('RecoveredTenantData'); "endState" = ('MarkingTenantOnlineInRecovery')};
+        'endAliasFailoverToRecovery' = @{ "beginState" = ('MarkingTenantOnlineInRecovery'); "endState" = "OnlineInRecovery"};
+        'startReset' = @{ "beginState" = ('RecoveringTenantData', 'RecoveredTenantData', 'MarkingTenantOnlineInRecovery', 'OnlineInRecovery'); "endState" = ('ResettingTenantData') };
+        'endReset' = @{ "beginState" = ('ResettingTenantData'); "endState" = ('ResetTenantData') };
+        'startRepatriation' = @{ "beginState" = ('RecoveredTenantData', 'OnlineInRecovery'); "endState" = ('RepatriatingTenantData') };
+        'endRepatriation' = @{ "beginState" = ('RepatriatingTenantData'); "endState" = ('RepatriatedTenantData') };
+        'startAliasFailoverToOrigin' = @{ "beginState" = ('ResetTenantData', 'RepatriatedTenantData'); "endState" = ('MarkingTenantOnlineInOrigin')};
+        'endAliasFailoverToOrigin' = @{ "beginState" = ('MarkingTenantOnlineInOrigin'); "endState" = ('OnlineInOrigin')};
     }    
 
     $requestedState = $tenantRecoveryStates[$UpdateAction].endState
@@ -2675,7 +2735,7 @@ function Update-TenantResourceRecoveryState
         [object]$Catalog,
 
         [parameter(Mandatory=$true)]
-        [validateset('startRecovery', 'cancelRecovery', 'endRecovery', 'startReset', 'endReset', 'startReplication', 'endReplication', 'startFailover', 'conclude')]
+        [validateset('startRecovery', 'cancelRecovery', 'endRecovery', 'startReset', 'endReset', 'startReplication', 'endReplication', 'bypassReplication', 'startFailoverToOrigin', 'conclude')]
         [string]$UpdateAction,
 
         [parameter(Mandatory=$true)]
@@ -2692,15 +2752,16 @@ function Update-TenantResourceRecoveryState
     
     # Construct state transition dictionary for tenant object 
     $resourceRecoveryStates = @{
-        'startRecovery' = @{ "beginState" = ('n/a', 'complete', 'restoring'); "endState" = ('restoring') };
+        'startRecovery' = @{ "beginState" = ('n/a', 'complete'); "endState" = ('restoring') };
         'cancelRecovery' = @{ "beginState" = ('restoring'); "endState" = ('cancelled') };
         'endRecovery' = @{ "beginState" = ('restoring'); "endState" = ('restored') };
-        'startReset' = @{ "beginState" = ('restoring', 'cancelled', 'restored', 'resetting'); "endState" = ('resetting') };
+        'startReset' = @{ "beginState" = ('restoring', 'cancelled', 'restored'); "endState" = ('resetting') };
         'endReset' = @{ "beginState" = ('resetting', 'cancelled'); "endState" = ('complete') };
-        'startReplication' = @{ "beginState" = ('restored', 'replicating'); "endState" = ('replicating') };
+        'startReplication' = @{ "beginState" = ('restored'); "endState" = ('replicating') };
         'endReplication' = @{ "beginState" = ('replicating'); "endState" = ('replicated') };
-        'startFailover' = @{ "beginState" = ('replicated'); "endState" = ('repatriating') };
-        'conclude' = @{ "beginState" = ('replicated', 'repatriating'); "endState" = ('complete') };
+        'bypassReplication' = @{ "beginState" = ('restored'); "endState" = ('replicated') };
+        'startFailoverToOrigin' = @{ "beginState" = ('replicated'); "endState" = ('repatriating') };
+        'conclude' = @{ "beginState" = ('repatriating'); "endState" = ('complete') };
     }    
 
     $requestedState = $resourceRecoveryStates[$UpdateAction].endState

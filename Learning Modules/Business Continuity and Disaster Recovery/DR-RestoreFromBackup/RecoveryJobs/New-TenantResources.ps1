@@ -72,47 +72,24 @@ while (($pastDeployment) -and ($pastDeployment.ProvisioningState -NotIn "Succeed
   
 }
 
-# Output recovery progress 
-if ($ReplicateGoldenTenantDatabase)
-{
-  Write-Output "0% (0 of 3)"
-}
-else
-{
-  Write-Output "0% (0 of 2)" 
-}
+$existingGoldenTenantDatabase = Find-AzureRmResource -ResourceGroupNameEquals $ResourceGroupName -ResourceType "Microsoft.sql/servers/databases" -ResourceNameContains $config.GoldenTenantDatabaseName
+$existingNewTenantPool = Find-AzureRmResource -ResourceGroupNameEquals $ResourceGroupName -ResourceType "Microsoft.sql/servers/elasticpools" -ResourceNameEquals "$ServerName/Pool1"
+$recoveryCatalogServerName = $config.CatalogServerNameStem + $wtpUser.Name + $config.RecoverySuffix
+$originCatalogServerName = $config.CatalogServerNameStem + $wtpUser.Name
+$baseTenantDatabaseId = "/subscriptions/$currentSubscriptionId/resourceGroups/$($wtpUser.ResourceGroupName)/providers/Microsoft.Sql/servers/$originCatalogServerName/recoverabledatabases/$($config.GoldenTenantDatabaseName)"
 
+$goldenTenantDatabaseConfig = @{
+  CatalogServerName = "$recoveryCatalogServerName"
+  DatabaseName = "$($config.GoldenTenantDatabaseName)"
+  SourceDatabaseId = "$baseTenantDatabaseId"
+  ServiceObjectiveName = "S1"
+}
 
 # Create a tenant server with firewall rules, and an elastic pool for new tenants (idempotent)
 # Note: In a production scenario you would additionally create logins and users that need to exist on the server(see: https://docs.microsoft.com/en-us/azure/sql-database/sql-database-disaster-recovery)
-$existingGoldenTenantDatabase = Find-AzureRmResource -ResourceGroupNameEquals $ResourceGroupName -ResourceType "Microsoft.sql/servers/databases" -ResourceNameContains $config.GoldenTenantDatabaseName
-if ($existingGoldenTenantDatabase)
+if (!$existingGoldenTenantDatabase -and !$existingNewTenantPool)
 {
-  $deployment = New-AzureRmResourceGroupDeployment `
-                    -Name $deploymentName `
-                    -ResourceGroupName $ResourceGroupName `
-                    -TemplateFile ("$using:scriptPath\RecoveryTemplates\" + $config.NewTenantResourcesProvisioningTemplate) `
-                    -serverName $ServerName `
-                    -ReplicateGoldenTenantDatabase "false" `
-                    -ErrorAction Stop
-
-  # Output recovery progress 
-  Write-Output "100% (2 of 2)" 
-}
-else
-{
-  # Geo-replicate golden tenant database in addition to create a tenant server with firewall rules, and an elastic pool for new tenants (idempotent)
-  $recoveryCatalogServerName = $config.CatalogServerNameStem + $wtpUser.Name + $config.RecoverySuffix
-  $originCatalogServerName = $config.CatalogServerNameStem + $wtpUser.Name
-  $baseTenantDatabaseId = "/subscriptions/$currentSubscriptionId/resourceGroups/$($wtpUser.ResourceGroupName)/providers/Microsoft.Sql/servers/$originCatalogServerName/recoverabledatabases/$($config.GoldenTenantDatabaseName)"
-
-  $goldenTenantDatabaseConfig = @{
-    CatalogServerName = "$recoveryCatalogServerName"
-    DatabaseName = "$($config.GoldenTenantDatabaseName)"
-    SourceDatabaseId = "$baseTenantDatabaseId"
-    ServiceObjectiveName = "S1"
-  }
-
+  # Deploy golden tenant database and a new tenant server and pool
   $deployment = New-AzureRmResourceGroupDeployment `
                     -Name $deploymentName `
                     -ResourceGroupName $ResourceGroupName `
@@ -121,7 +98,31 @@ else
                     -ReplicateGoldenTenantDatabase "true" `
                     -GoldenTenantDatabaseConfiguration $goldenTenantDatabaseConfig `
                     -ErrorAction Stop
-
-  # Output recovery progress
-  Write-Output "100% (3 of 3)"
 }
+elseif (!$existingGoldenTenantDatabase -and $existingNewTenantPool)
+{
+  # Deploy golden tenant database 
+  $deployment = New-AzureRmResourceGroupDeployment `
+                    -Name $deploymentName `
+                    -ResourceGroupName $ResourceGroupName `
+                    -TemplateFile ("$using:scriptPath\RecoveryTemplates\" + $config.NewTenantResourcesProvisioningTemplate) `
+                    -serverName $ServerName `
+                    -ReplicateGoldenTenantDatabase "true" `
+                    -GoldenTenantDatabaseConfiguration $goldenTenantDatabaseConfig `
+                    -ErrorAction Stop
+}
+elseif ($existingGoldenTenantDatabase -and !$existingNewTenantPool)
+{
+  # Deploy new tenant server and pool
+  $deployment = New-AzureRmResourceGroupDeployment `
+                    -Name $deploymentName `
+                    -ResourceGroupName $ResourceGroupName `
+                    -TemplateFile ("$using:scriptPath\RecoveryTemplates\" + $config.NewTenantResourcesProvisioningTemplate) `
+                    -serverName $ServerName `
+                    -ReplicateGoldenTenantDatabase "false" `
+                    -ErrorAction Stop
+}
+
+# Output recovery progress
+Write-Output "100% (3 of 3)"
+

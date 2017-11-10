@@ -47,6 +47,9 @@ catch
         -PollDnsUpdate
 }
 
+# Initialize catalog tables 
+& "$PSScriptRoot\Initialize-CatalogSyncTables.ps1" -WtpResourceGroupName $wtpUser.ResourceGroupName -WtpUser $wtpUser.Name -NoEcho
+
 # Get the databases of all tenants currently registered in the catalog
 $catalogObject = Get-Catalog -ResourceGroupName $wtpUser.ResourceGroupName -WtpUser $wtpUser.Name
 $tenantDatabaseList = (Get-TenantDatabaseLocations -Catalog $catalogObject).Location

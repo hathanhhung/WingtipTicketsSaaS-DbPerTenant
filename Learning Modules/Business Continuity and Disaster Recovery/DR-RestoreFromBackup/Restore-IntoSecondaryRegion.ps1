@@ -136,7 +136,7 @@ $tenantList = Get-Tenants -Catalog $tenantCatalog -ErrorAction Stop
 Write-Output "Marking non-recovered tenants offline in the catalog..."
 foreach ($tenant in $tenantList)
 {
-  $tenantStatus = (Get-ExtendedTenant -Catalog $tenantCatalog -TenantKey $tenant.Key).RecoveryState
+  $tenantStatus = (Get-ExtendedTenant -Catalog $tenantCatalog -TenantKey $tenant.Key).TenantRecoveryState
 
   if ($tenantStatus -NotIn 'onlineInRecovery')
   {

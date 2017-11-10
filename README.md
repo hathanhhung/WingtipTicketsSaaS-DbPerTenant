@@ -15,7 +15,7 @@ This project provides a sample SaaS application 'WingtipTicketsSaaS' that embodi
 
 To deploy the app to Azure, click the blue link below. Deploy the app in a new resource group, and provide a short *user* value that will be appended to several resource names to make them globally unique.  Your initials and a number is a good pattern to use.
 
-<a href="http://aka.ms/deploywtpapp" target="_blank">
+<a href="https://aka.ms/deploywtp-dptapp" target="_blank">
     <img src="http://azuredeploy.net/deploybutton.png"/>
 </a>
 
@@ -30,13 +30,16 @@ The basic application, which includes three pre-defined databases for three venu
 >1. Right click the zip file and select **Properties**.
 >2. On the **General** tab, select **Unblock** and select **OK**.
 
-1. Install updated [AzurePowerShell module](https://ayoframeworktestry2hdl.blob.core.windows.net/wingtipbacpacs/AzurePowerShellWithAlias.msi). This module adds alias functions for Azure SQL database that will be used in the management scripts.
+1. Install [AzurePowerShell module 5.0 or above](https://github.com/Azure/azure-powershell/releases). This version of AzurePowerShell adds alias functions for Azure SQL database that will be used in the management scripts.  
+*If your PowerShell session does not allow running scripts, make sure you've run the `Set-ExecutionPolicy RemoteSigned` command*
 
-2. Clone the repo to your local machine. Or Download and extract the repo to your local machine from a zip file.
+2. Install the SqlServer PowerShell module. This installs cmdline functions like 'Invoke-SqlCmd' that are used by the PowerShell scripts to connect to tenant databases. `Install-Module sqlserver`
 
-3. Run the *'Initialize-WingtipDeploymentWithAliases'* script. This script creates aliases for all tenants currently registered in the catalog and modifies the existing catalog to use these aliases. All other scripts in this repo operate under the assumption that tenant aliases are present.
+3. Clone the repo to your local machine. Or Download and extract the repo to your local machine from a zip file.
 
-4. Run the demo scripts present in the 'Learning Modules' folder.
+4. Run the *'Initialize-WingtipDeploymentWithAliases'* script. This script creates aliases for all tenants currently registered in the catalog and modifies the existing catalog to use these aliases. All other scripts in this repo operate under the assumption that tenant aliases are present.
+
+5. Run the demo scripts present in the 'Learning Modules' folder.
 
 More information about the sample app and the associated tutorials is here: [https://aka.ms/sqldbsaastutorial](https://aka.ms/sqldbsaastutorial)
 

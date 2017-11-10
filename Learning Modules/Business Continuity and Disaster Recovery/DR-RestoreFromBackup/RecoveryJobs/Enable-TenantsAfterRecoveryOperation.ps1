@@ -179,6 +179,17 @@ while ($true)
 
         }
       }
+      elseif (($originTenantDatabase.RecoveryState -In 'restored') -and ($tenantRecoveryState -eq 'OnlineInRecovery'))
+      {
+        # Set tenant online if not already so 
+        if ($tenant.TenantStatus -ne "Online")
+        {
+          Set-TenantOnline -Catalog $tenantCatalog -TenantKey $tenantKey
+
+          # Update tenant recovery status to 'OnlineInRecovery'
+          $tenantState = Update-TenantRecoveryState -Catalog $tenantCatalog -UpdateAction "endAliasFailoverToRecovery" -TenantKey $tenantKey
+        }
+      }
       elseif (($restoredTenantDatabase) -and ($restoredTenantDatabase.RecoveryState -In 'resetting'))
       {
         # Update tenant recovery status to 'ResettingTenantData'
@@ -336,6 +347,17 @@ while ($true)
           -ServerDNSAlias $tenantAliasName `
           -OldServerName $restoredTenantServer `
           -OldResourceGroupName $WingtipRecoveryResourceGroup
+      }
+      elseif (($originTenantDatabase.RecoveryState -In 'complete') -and ($tenantRecoveryState -eq 'OnlineInOrigin'))
+      {
+        # Set tenant online if not already so 
+        if ($tenant.TenantStatus -ne "Online")
+        {
+          Set-TenantOnline -Catalog $tenantCatalog -TenantKey $tenantKey
+
+          # Update tenant recovery status to 'OnlineInRecovery'
+          $tenantState = Update-TenantRecoveryState -Catalog $tenantCatalog -UpdateAction "endAliasFailoverToOrigin" -TenantKey $tenantKey
+        }
       }
 
       if (!$tenantState)

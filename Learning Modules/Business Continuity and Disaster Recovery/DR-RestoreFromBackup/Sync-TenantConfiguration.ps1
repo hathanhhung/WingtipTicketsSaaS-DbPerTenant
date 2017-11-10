@@ -74,7 +74,7 @@ while (1 -eq 1)
     # Get tenant servers 
     foreach ($tenantShard in $tenantShardLocations)
     {
-        try 
+        try
         {
             # Resolve tenant server name from alias stored in shard 
             $tenantServerName = Get-ServerNameFromAlias $tenantShard.Server

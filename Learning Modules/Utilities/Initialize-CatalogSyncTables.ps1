@@ -12,7 +12,11 @@ param(
 [string]$WtpUser,
 
 [Parameter(Mandatory=$false)]
-[int]$QueryTimeout = 60
+[int]$QueryTimeout = 60,
+
+# NoEcho stops the output of the signed in user to prevent double echo  
+[parameter(Mandatory=$false)]
+[switch] $NoEcho
 )
 $WtpUser = $WtpUser.ToLower()
 
@@ -20,7 +24,7 @@ Import-Module $PSScriptRoot\..\Common\SubscriptionManagement -Force
 Import-Module $PSScriptRoot\..\Common\CatalogAndDatabaseManagement -Force
 
 # Get Azure credentials if not already logged on,  Use -Force to select a different subscription 
-Initialize-Subscription
+Initialize-Subscription -NoEcho:$NoEcho.IsPresent
 
 # Get configuration variables 
 $config = Get-Configuration
@@ -89,34 +93,43 @@ $commandText = "
     GO
 
     CREATE VIEW [dbo].[TenantsExtended]
-    AS
+    AS        
         WITH databasesWithPriority AS (
-            SELECT *, RANK() OVER (PARTITION BY DatabaseName ORDER BY LastUpdated DESC) AS databasePriority FROM Databases
+            SELECT *, RANK() OVER (PARTITION BY DatabaseName ORDER BY LastUpdated DESC) AS databasePriority FROM Databases  
         )
-        SELECT  tenant.TenantId,
-                tenant.TenantName,
-                CASE
-                    WHEN mapping.Status = 1 THEN 'Online'
-                    WHEN mapping.Status = 0 THEN 'Offline'
+        SELECT      tenant.TenantId,
+                    tenant.TenantName,
+                    CASE
+                        WHEN mapping.Status = 1 THEN 'Online'
+                        WHEN mapping.Status = 0 THEN 'Offline'
                     ELSE 'Unknown'
-                END AS TenantStatus,
-                tenant.ServicePlan,
-                shard.ServerName AS TenantAlias,
-                tenantDB.ServerName,
-                shard.DatabaseName,
-                tenant.RecoveryState AS TenantRecoveryState,
-                tenantServer.Location,
-                tenantDB.LastUpdated
-        FROM    [dbo].[Tenants] AS tenant
-        JOIN    [__ShardManagement].[ShardMappingsGlobal] AS mapping ON (tenant.TenantId = mapping.MinValue)
-        JOIN    [__ShardManagement].[ShardMapsGlobal] AS map ON (map.ShardMapId = mapping.ShardMapId)
-        JOIN    [__ShardManagement].[ShardsGlobal] as shard ON (shard.ShardId = mapping.ShardId AND shard.ShardMapId = map.ShardMapId AND mapping.ShardMapId = map.ShardMapId)
-        JOIN    databasesWithPriority AS tenantDB ON (tenantDB.DatabaseName = shard.DatabaseName)
-        JOIN    Servers AS tenantServer ON (tenantServer.ServerName = tenantDB.ServerName)
-        WHERE   (map.Name = 'tenantcatalog' AND tenantDB.databasePriority = 1);
+                    END AS TenantStatus,
+                    tenant.ServicePlan,
+                    CASE
+                        WHEN shard.ServerName LIKE '%alias.database.windows.net' THEN shard.ServerName
+                        ELSE NULL
+                    END AS TenantAlias,
+                    CASE
+                        WHEN shard.ServerName LIKE '%alias.database.windows.net' THEN tenantDB.ServerName
+                        ELSE shard.ServerName
+                    END AS ServerName,
+                    shard.DatabaseName,
+                    tenant.RecoveryState AS TenantRecoveryState,
+                    tenantServer.Location,
+                    CASE
+                        WHEN tenantDB.LastUpdated IS NULL THEN tenant.LastUpdated
+                        ELSE tenantDB.LastUpdated
+                    END AS LastUpdated
+        FROM        [dbo].[Tenants] AS tenant
+        JOIN        [__ShardManagement].[ShardMappingsGlobal] AS mapping ON (tenant.TenantId = mapping.MinValue)
+        JOIN        [__ShardManagement].[ShardMapsGlobal] AS map ON (map.ShardMapId = mapping.ShardMapId)
+        JOIN        [__ShardManagement].[ShardsGlobal] as shard ON (shard.ShardId = mapping.ShardId AND shard.ShardMapId = map.ShardMapId AND mapping.ShardMapId = map.ShardMapId)
+        LEFT JOIN   databasesWithPriority AS tenantDB ON (tenantDB.DatabaseName = shard.DatabaseName AND tenantDB.databasePriority = 1)
+        LEFT JOIN   Servers AS tenantServer ON (tenantServer.ServerName = tenantDB.ServerName)
+        WHERE       (map.Name = 'tenantcatalog');
     GO  
 "
-Write-Output "Initializing extended tables in the catalog database."
+Write-Output "Initializing extended tables in the catalog database..."
 Invoke-SqlcmdWithRetry `
     -Username $adminUserName `
     -Password $adminPassword `
