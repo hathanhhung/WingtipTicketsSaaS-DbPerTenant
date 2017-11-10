@@ -57,14 +57,29 @@
                         {
                             foreach (var tenant in Model)
                             {
-                                <tr>
-                                    <th style="display: none;">
-                                        <a href="@Url.Action("Index", "Events", new {tenant = tenant.TenantName})" target="_blank">@tenant.VenueName </a>
-                                    </th>
-                                    <th>
-                                        <a href="@Url.Action("Index", "Events", new {tenant = tenant.TenantName})" target="_blank">@tenant.VenueName </a>
-                                    </th>
-                                </tr>
+                                if (tenant.VenueName != null)
+                                {
+                                    <tr>
+                                        <th style="display: none;">
+                                            <a href="@Url.Action("Index", "Events", new { tenant = tenant.TenantName })" target="_blank">@tenant.VenueName </a>
+                                        </th>
+                                        <th>
+                                            <a href="@Url.Action("Index", "Events", new { tenant = tenant.TenantName })" target="_blank">@tenant.VenueName </a>
+                                        </th>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <th style="display: none;">
+                                            <a href="" target="_blank">@tenant.TenantName </a>
+                                        </th>
+                                        <th style="pointer-events: none; cursor: default">
+                                            <a href="" target="_blank">@tenant.TenantName (offline)</a>
+                                        </th>
+                                    </tr>
+
+                                }
                             }
                         }
                     }
