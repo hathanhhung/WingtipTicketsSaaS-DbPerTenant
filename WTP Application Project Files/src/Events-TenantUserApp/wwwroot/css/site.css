@@ -1298,3 +1298,33 @@ input::-moz-placeholder { /* Mozilla Firefox 19+ */
 input:-ms-input-placeholder { /* Internet Explorer 10-11 */
     color: #9a9a9a;
 }
+
+.maintenance { 
+  text-align: center; 
+  padding: 150px; 
+  font-size: 20px; 
+  color: #333;
+}
+  
+.maintenance-header { 
+  font-size: 50px; 
+  margin-bottom: 15px;
+}
+
+.maintenance article { 
+  display: block; 
+  text-align: left; 
+  width: 650px; 
+  margin: 0 auto;
+  margin-left: 16%; 
+}
+  
+.maintenance a { 
+  color: #dc8100; 
+  text-decoration: none; 
+}
+  
+.maintenance a:hover { 
+  color: #333; 
+  text-decoration: none; 
+}

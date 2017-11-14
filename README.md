@@ -6,16 +6,16 @@ Built on SQL Database using a database-per-tenant model.
 This project provides a sample SaaS application 'WingtipTicketsSaaS' that embodies many common SaaS patterns that can be used with Azure SQL Database. The Wingtip Tickets SaaS sample is based on an event-management and ticket-selling scenario for small venues. Each venue is a 'tenant' of the SaaS application. In this variation of the SaaS application, a DNS alias is created for each tenant. This ensures that no app change is required during a disaster recovery event.
 
 ## Differences from main 'Database per Tenant' project
+* Deploys the WingtipTicketsSaaS application with tenant aliases that are used to ensure no app change is required during disaster recovery
 * Includes script that modifies existing 'dbpertenant' deployment to include aliases for tenants and the catalog database (*Initialize-WingtipSaaSAliases.ps1*)
-* Includes catalog functions that operate using tenant alias in order to be agnostic to which region a Wingtip deployment is currently running in.
-* Requires install of [custom 'AzureRmPowerShell' msi](https://ayoframeworktestry2hdl.blob.core.windows.net/wingtipbacpacs/AzurePowerShellWithAlias.msi) to get new alias functions.
+* Includes catalog functions that operate using tenant alias in order to be agnostic to which region a Wingtip deployment is currently running in
 
 ## How to deploy sample app
 >**NOTE:** if you install the application, you will be charged for the Azure resources created.  Actual costs incurred are based on your subscription offer type but are nominal if the application is not scaled up unreasonably and is deleted promptly after you have finished exploring the tutorials.
 
 To deploy the app to Azure, click the blue link below. Deploy the app in a new resource group, and provide a short *user* value that will be appended to several resource names to make them globally unique.  Your initials and a number is a good pattern to use.
 
-<a href="https://aka.ms/deploywtp-dptapp" target="_blank">
+<a href="https://aka.ms/deploywingtipdpt-aliases" target="_blank">
     <img src="http://azuredeploy.net/deploybutton.png"/>
 </a>
 
@@ -37,11 +37,7 @@ The basic application, which includes three pre-defined databases for three venu
 
 3. Clone the repo to your local machine. Or Download and extract the repo to your local machine from a zip file.
 
-4. Run the *'Initialize-WingtipDeploymentWithAliases'* script. This script creates aliases for all tenants currently registered in the catalog and modifies the existing catalog to use these aliases. All other scripts in this repo operate under the assumption that tenant aliases are present.
-
-5. Run the demo scripts present in the 'Learning Modules' folder.
-
-More information about the sample app and the associated tutorials is here: [https://aka.ms/sqldbsaastutorial](https://aka.ms/sqldbsaastutorial)
+4. Run the demo scripts present in the 'Learning Modules' folder.
 
 ## Architecture
 The sample uses a database-per-tenant model, with a database created for each venue.  

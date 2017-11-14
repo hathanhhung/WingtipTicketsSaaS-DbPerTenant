@@ -28,6 +28,7 @@ namespace Events_TenantUserApp.Controllers
 
         #endregion
 
+
         [Route("{tenant}")]
         public async Task<ActionResult> Index(string tenant)
         {
@@ -47,6 +48,20 @@ namespace Events_TenantUserApp.Controllers
                     {
                         return View("TenantError", tenant);
                     }
+                }
+            }
+            catch (Microsoft.Azure.SqlDatabase.ElasticScale.ShardManagement.ShardManagementException ex)
+            {
+                if (ex.Message.Contains("request is associated with a mapping that is marked ‘Offline’"))
+                {
+                    var tenantModel = await _catalogRepository.GetTenant(tenant);
+                    _logger.LogInformation(0, ex, "Tenant is offline: {tenant}", tenantModel.TenantName);
+                    return View("TenantOffline", tenantModel.TenantName);
+                }
+                else
+                {
+                    _logger.LogError(0, ex, "Tenant shard was unavailable for tenant: {tenant}", tenant);
+                    return View("Error");
                 }
             }
             catch (Exception ex)
