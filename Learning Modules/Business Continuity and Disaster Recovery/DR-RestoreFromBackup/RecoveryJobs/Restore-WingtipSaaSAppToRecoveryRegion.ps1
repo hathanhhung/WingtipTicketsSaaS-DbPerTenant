@@ -35,7 +35,7 @@ $wtpUser = Get-UserConfig
 $config = Get-Configuration
 
 # Get Wingtip web app if it exists
-$recoveryWebAppName = $config.EventsAppNameStem + $wtpUser.Name + $config.RecoverySuffix
+$recoveryWebAppName = $config.EventsAppNameStem + $wtpUser.Name + $config.RecoveryRoleSuffix
 $wingtipRecoveryApp = Find-AzureRmResource `
                         -ResourceType "Microsoft.Web/sites" `
                         -ResourceGroupNameEquals $WingtipRecoveryResourceGroup `
@@ -49,15 +49,15 @@ else
 {
     Write-Output "0% (0 of 1)"
     $templatePath = "$using:scriptPath\RecoveryTemplates\" + $config.WebApplicationRecoveryTemplate
-    $catalogRecoveryServerName = $config.CatalogServerNameStem + $wtpUser.Name + $config.RecoverySuffix
-    $tenantsRecoveryServerName = $config.TenantServerNameStem + $wtpUser.Name + $config.RecoverySuffix
+    $catalogRecoveryServerName = $config.CatalogServerNameStem + $wtpUser.Name + $config.RecoveryRoleSuffix
+    $tenantsRecoveryServerName = $config.TenantServerNameStem + $wtpUser.Name + $config.RecoveryRoleSuffix
     $deployment = New-AzureRmResourceGroupDeployment `
                     -Name $recoveryWebAppName `
                     -ResourceGroupName $WingtipRecoveryResourceGroup `
                     -TemplateFile $templatePath `
                     -WtpUser $wtpUser.Name `
                     -WtpOriginResourceGroup $wtpUser.ResourceGroupName `
-                    -RecoverySuffix $config.RecoverySuffix `
+                    -RecoverySuffix $config.RecoveryRoleSuffix `
                     -CatalogRecoveryServer $catalogRecoveryServerName `
                     -TenantsRecoveryServer $tenantsRecoveryServerName `
                     -ErrorAction Stop

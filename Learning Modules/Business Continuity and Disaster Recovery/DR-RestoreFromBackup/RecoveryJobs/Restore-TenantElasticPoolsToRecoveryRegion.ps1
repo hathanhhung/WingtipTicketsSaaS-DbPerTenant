@@ -44,7 +44,7 @@ $recoveryResourceGroup = Get-AzureRmResourceGroup -Name $WingtipRecoveryResource
 
 # Get list of tenant elastic pools to be recovered 
 $tenantElasticPools = @()
-$tenantElasticPools += Get-ExtendedElasticPool -Catalog $tenantCatalog | Where-Object {($_.ServerName -NotMatch "$($config.RecoverySuffix)$")}
+$tenantElasticPools += Get-ExtendedElasticPool -Catalog $tenantCatalog | Where-Object {($_.ServerName -NotMatch "$($config.RecoveryRoleSuffix)$")}
 
 $recoveredPoolCount = 0
 $poolCount = $tenantElasticPools.length 
@@ -78,7 +78,8 @@ while (($pastDeployment) -and ($pastDeployment.ProvisioningState -NotIn "Succeed
 $restoredElasticPools = Find-AzureRmResource -ResourceGroupNameEquals $WingtipRecoveryResourceGroup -ResourceType "Microsoft.sql/servers/elasticpools"
 foreach ($pool in $tenantElasticPools)
 {
-  $compoundPoolName = "$($pool.ServerName + $config.RecoverySuffix)/$($pool.ElasticPoolName)"
+  $recoveredServerName = ($pool.ServerName -split $config.OriginRoleSuffix)[0] + $config.RecoveryRoleSuffix
+  $compoundPoolName = "$($recoveredServerName)/$($pool.ElasticPoolName)"
   $pool | Add-Member "CompoundPoolName" $compoundPoolName
 
   if (($restoredElasticPools.Name -contains $pool.CompoundPoolName) -and ($pool.RecoveryState -In 'restoring'))
@@ -99,7 +100,7 @@ Write-Output "$elasticPoolRecoveryPercentage% ($recoveredPoolCount of $poolCount
 
 while ($recoveredPoolCount -lt $poolCount)
 {
-  $recoveredServerList = Get-ExtendedServer -Catalog $tenantCatalog | Where-Object {($_.ServerName -NotMatch "$($config.RecoverySuffix)$") -and ($_.RecoveryState -eq 'restored')}
+  $recoveredServerList = Get-ExtendedServer -Catalog $tenantCatalog | Where-Object {($_.ServerName -NotMatch "$($config.RecoveryRoleSuffix)$") -and ($_.RecoveryState -eq 'restored')}
   
   # Sleep and check back again later if no servers have been recovered 
   if (!$recoveredServerList)
@@ -119,7 +120,8 @@ while ($recoveredPoolCount -lt $poolCount)
         if (($recoveredServerList.ServerName -contains $elasticPool.ServerName) -and ($elasticPool.RecoveryState -In "n/a","restoring","complete"))
         {
           $poolRecoveryQueue += $elasticPool
-          $recoveredServer = Find-AzureRmResource -ResourceGroupNameEquals $WingtipRecoveryResourceGroup -ResourceNameEquals ($elasticPool.ServerName + $config.RecoverySuffix)
+          $recoveredServerName = ($elasticPool.ServerName -split $config.OriginRoleSuffix)[0] + $config.RecoveryRoleSuffix
+          $recoveredServer = Find-AzureRmResource -ResourceGroupNameEquals $WingtipRecoveryResourceGroup -ResourceNameEquals $recoveredServerName
           [array]$elasticPoolConfigurations += @{
             ServerName = "$($recoveredServer.Name)"
             Location = "$($recoveredServer.Location)"

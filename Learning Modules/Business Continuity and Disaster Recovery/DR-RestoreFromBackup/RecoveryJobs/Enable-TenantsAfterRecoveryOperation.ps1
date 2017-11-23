@@ -72,7 +72,7 @@ while ($true)
 
     # Get list of offline tenant databases and their recovery status 
     $originTenantDatabases = @()
-    $originTenantDatabases += Get-ExtendedDatabase -Catalog $tenantCatalog | Where-Object {($_.ServerName -NotMatch "$($config.RecoverySuffix)$")}
+    $originTenantDatabases += Get-ExtendedDatabase -Catalog $tenantCatalog | Where-Object {($_.ServerName -NotMatch "$($config.RecoveryRoleSuffix)$")}
     $restoredTenantDatabases = Find-AzureRmResource -ResourceGroupNameEquals $WingtipRecoveryResourceGroup -ResourceType "Microsoft.sql/servers/databases"
 
     # Output recovery progress 
@@ -154,7 +154,7 @@ while ($true)
         $aliasInRecoveryRegion = Get-AzureRmSqlServerDNSAlias `
                                     -ResourceGroupName $WingtipRecoveryResourceGroup `
                                     -ServerName $restoredTenantServer `
-                                    -ServerDNSAliasName $tenantAliasName `
+                                    -DNSAliasName $tenantAliasName `
                                     -ErrorAction SilentlyContinue
         if (!$aliasInRecoveryRegion)
         {
@@ -253,7 +253,7 @@ while ($true)
         $aliasInOriginalRegion = Get-AzureRmSqlServerDNSAlias `
                                     -ResourceGroupName $wtpUser.ResourceGroupName `
                                     -ServerName $originTenantServer `
-                                    -ServerDNSAliasName $tenantAliasName `
+                                    -DNSAliasName $tenantAliasName `
                                     -ErrorAction SilentlyContinue `
                                     2>$null
         if (!$aliasInOriginalRegion)

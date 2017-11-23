@@ -48,18 +48,19 @@ $primaryLocation = (Get-AzureRmResourceGroup -ResourceGroupName $wtpUser.Resourc
 $regionPairs = Get-Content -raw "$PSScriptRoot\..\..\Utilities\AzurePairedRegions.txt" | ConvertFrom-StringData
 $recoveryLocation = $regionPairs[$primaryLocation]
 $currentSubscriptionId = Get-SubscriptionId
-$recoveryResourceGroupName = $wtpUser.ResourceGroupName + $config.RecoverySuffix
-$recoveryCatalogServerName = $config.CatalogServerNameStem + $wtpUser.Name + $config.RecoverySuffix
-$originCatalogServerName = $config.CatalogServerNameStem + $wtpUser.Name
+$recoveryResourceGroupName = $wtpUser.ResourceGroupName + $config.RecoveryRoleSuffix
+$recoveryCatalogServerName = $config.CatalogServerNameStem + $wtpUser.Name + $config.RecoveryRoleSuffix 
+$originCatalogServerName = $config.CatalogServerNameStem + $wtpUser.Name + $config.OriginRoleSuffix 
 
 #-------------------------------------------------------[Main Script]------------------------------------------------------------
 
 $startTime = Get-Date
 
-# Disable traffic manager profile for primary region (idempotent)
+# Disable traffic manager web app endpoint in primary region (idempotent)
 Write-Output "Disabling traffic manager endpoint for Wingtip events app..."
-$profileName = $config.EventsAppNameStem + $wtpUser.Name
-Disable-AzureRmTrafficManagerEndpoint -Name $profileName -Type AzureEndpoints -ProfileName $profileName -ResourceGroupName $wtpUser.ResourceGroupName -Force -ErrorAction SilentlyContinue > $null
+$profileName = $config.EventsAppNameStem + $wtpUser.Name + '-profiles'
+$webAppEndpoint = $config.EventsAppNameStem + $wtpUser.name + $config.OriginRoleSuffix
+Disable-AzureRmTrafficManagerEndpoint -Name $webAppEndpoint -Type AzureEndpoints -ProfileName $profileName -ResourceGroupName $wtpUser.ResourceGroupName -Force -ErrorAction SilentlyContinue > $null
 
 try
 {
@@ -68,7 +69,9 @@ try
                         -ResourceGroupName $recoveryResourceGroupName `
                         -ServerName $recoveryCatalogServerName `
                         -DatabaseName $config.CatalogDatabaseName `
-                        -ErrorAction Stop                      
+                        -ErrorAction Stop   
+  
+  Write-Output "Catalog database already recovered in recovery region..."                   
 }
 catch
 {
@@ -97,13 +100,14 @@ catch
 finally
 {
   # Get DNS alias for catalog server 
-  $catalogAliasName = $config.CatalogServerNameStem + $wtpUser.Name + "-alias"
+  $catalogAliasName = "catalog-" + $wtpUser.Name
   $fullyQualifiedCatalogAlias = $catalogAliasName + ".database.windows.net"
   $activeCatalogServerName = Get-ServerNameFromAlias $fullyQualifiedCatalogAlias -ErrorAction Stop  
 
   # Update catalog alias to point to catalog database in recovery region if needed
   if ($activeCatalogServerName -ne $recoveryCatalogServerName)
   {
+    Write-Output "Updating catalog alias to point to recovery region instance..."
     Set-DnsAlias `
       -ResourceGroupName $recoveryResourceGroupName `
       -ServerName $recoveryCatalogServerName `
@@ -147,9 +151,9 @@ foreach ($tenant in $tenantList)
 Write-Output "---`nRecovering '$($wtpUser.ResourceGroupName)' deployment into '$recoveryLocation' region"
 
 # Construct the name of the server that will be used to store tenants who join the Wingtip platform in the recovery region 
-$serverList = Get-ExtendedServer -Catalog $tenantCatalog | Where-Object {($_.ServerName -NotMatch "$($config.RecoverySuffix)$")}
+$serverList = Get-ExtendedServer -Catalog $tenantCatalog | Where-Object {($_.ServerName -NotMatch "$($config.RecoveryRoleSuffix)$")}
 $latestServerIndex = $serverList | Select-String -Pattern "tenants(\d+)-.+" | %{$_.matches[0].Groups[1].value -as [int]} | sort | select -last 1
-$newTenantServerName = "tenants" + ($latestServerIndex + 1) + "-$($wtpUser.Name)" + $config.RecoverySuffix
+$newTenantServerName = "tenants" + ($latestServerIndex + 1) + "-$($wtpUser.Name)" + $config.RecoveryRoleSuffix
 
 # Start background job to deploy recovery instance of Wingtip application into recovery region 
 $appRecoveryJob = Start-Job -Name "AppRestore" -FilePath "$PSScriptRoot\RecoveryJobs\Restore-WingtipSaaSAppToRecoveryRegion.ps1" -ArgumentList @($recoveryResourceGroupName)
@@ -182,10 +186,10 @@ while ($true)
 
   # Enable traffic manager endpoint in recovery region if resources have been created for new tenants 
   # This signals that the app is ready to receive traffic and can process new tenant registrations while recovery operations are underway
-  if ($newTenantProvisioningJob.State -eq "Completed")
+  if (($newTenantProvisioningJob.State -eq "Completed") -and ($appRecoveryJob.State -eq "Completed"))
   {
-    $profileName = $config.EventsAppNameStem + $wtpUser.Name
-    $endpointName = $config.EventsAppNameStem + $wtpUser.Name + $config.RecoverySuffix
+    $profileName = $config.EventsAppNameStem + $wtpUser.Name + '-profiles'
+    $endpointName = $config.EventsAppNameStem + $wtpUser.Name + $config.RecoveryRoleSuffix
 
     $webAppEndpoint = Get-AzureRmTrafficManagerEndpoint -Name $endpointName -Type AzureEndpoints -ProfileName $profileName -ResourceGroupName $wtpUser.ResourceGroupName
     

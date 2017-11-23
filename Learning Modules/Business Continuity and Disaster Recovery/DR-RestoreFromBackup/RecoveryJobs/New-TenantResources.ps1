@@ -74,8 +74,8 @@ while (($pastDeployment) -and ($pastDeployment.ProvisioningState -NotIn "Succeed
 
 $existingGoldenTenantDatabase = Find-AzureRmResource -ResourceGroupNameEquals $ResourceGroupName -ResourceType "Microsoft.sql/servers/databases" -ResourceNameContains $config.GoldenTenantDatabaseName
 $existingNewTenantPool = Find-AzureRmResource -ResourceGroupNameEquals $ResourceGroupName -ResourceType "Microsoft.sql/servers/elasticpools" -ResourceNameEquals "$ServerName/Pool1"
-$recoveryCatalogServerName = $config.CatalogServerNameStem + $wtpUser.Name + $config.RecoverySuffix
-$originCatalogServerName = $config.CatalogServerNameStem + $wtpUser.Name
+$recoveryCatalogServerName = $config.CatalogServerNameStem + $wtpUser.Name + $config.RecoveryRoleSuffix  
+$originCatalogServerName = $config.CatalogServerNameStem + $wtpUser.Name + $config.OriginRoleSuffix 
 $baseTenantDatabaseId = "/subscriptions/$currentSubscriptionId/resourceGroups/$($wtpUser.ResourceGroupName)/providers/Microsoft.Sql/servers/$originCatalogServerName/recoverabledatabases/$($config.GoldenTenantDatabaseName)"
 
 $goldenTenantDatabaseConfig = @{

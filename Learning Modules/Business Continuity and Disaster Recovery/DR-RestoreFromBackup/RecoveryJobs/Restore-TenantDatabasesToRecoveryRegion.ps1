@@ -58,8 +58,8 @@ $recoveryResourceGroup = Get-AzureRmResourceGroup -Name $WingtipRecoveryResource
 # Get list of tenant databases to be recovered. 
 [array]$tenantDatabaseConfigurations = @()
 $tenantDatabases = @()
-$tenantDatabases += Get-ExtendedDatabase -Catalog $tenantCatalog | Where-Object {($_.ServerName -NotMatch "$($config.RecoverySuffix)$")}
-$tenantPriorityList = Get-ExtendedTenant -Catalog $tenantCatalog -SortTenants | Where-Object {($_.ServerName -NotMatch "$($config.RecoverySuffix)$")}
+$tenantDatabases += Get-ExtendedDatabase -Catalog $tenantCatalog | Where-Object {($_.ServerName -NotMatch "$($config.RecoveryRoleSuffix)$")}
+$tenantPriorityList = Get-ExtendedTenant -Catalog $tenantCatalog -SortTenants | Where-Object {($_.ServerName -NotMatch "$($config.RecoveryRoleSuffix)$")}
 
 # Add tenant priority to tenant databases 
 foreach ($database in $tenantDatabases)
@@ -76,11 +76,11 @@ $pastDeploymentWaitTime = 0
 
 # Wait until all elastic pools have been restored to start restoring databases
 # This ensures that all required container resources have been acquired before database recovery begins 
-$nonRecoveredPoolList = Get-ExtendedElasticPool -Catalog $tenantCatalog | Where-Object {($_.ServerName -NotMatch "$($config.RecoverySuffix)$") -and ($_.RecoveryState -NotIn 'restored')}
+$nonRecoveredPoolList = Get-ExtendedElasticPool -Catalog $tenantCatalog | Where-Object {($_.ServerName -NotMatch "$($config.RecoveryRoleSuffix)$") -and ($_.RecoveryState -NotIn 'restored')}
 while ($nonRecoveredPoolList)
 {
   Start-Sleep $sleepInterval
-  $nonRecoveredPoolList = Get-ExtendedElasticPool -Catalog $tenantCatalog | Where-Object {($_.ServerName -NotMatch "$($config.RecoverySuffix)$") -and ($_.RecoveryState -NotIn 'restored')}
+  $nonRecoveredPoolList = Get-ExtendedElasticPool -Catalog $tenantCatalog | Where-Object {($_.ServerName -NotMatch "$($config.RecoveryRoleSuffix)$") -and ($_.RecoveryState -NotIn 'restored')}
 }
 
 # Restore tenant databases while there are databases to restore
@@ -119,7 +119,7 @@ while ($recoveredDatabaseCount -lt $tenantDatabaseCount)
   {
     if ($restoredDatabaseNames -contains $database.DatabaseName)
     {
-      $restoredServerName = $database.ServerName + $config.RecoverySuffix
+      $restoredServerName = ($database.ServerName -split $config.OriginRoleSuffix)[0] + $config.RecoveryRoleSuffix
 
       # Enable change tracking on tenant database. This tracks any changes to tenant data that will need to be repatriated when the primary region is available once more. 
       Enable-ChangeTrackingForTenant -Catalog $tenantCatalog -TenantServerName $restoredServerName -TenantDatabaseName $database.DatabaseName -RetentionPeriod 10
@@ -192,7 +192,8 @@ while ($recoveredDatabaseCount -lt $tenantDatabaseCount)
     # Record database configuration of tenant databases in batch 
     foreach ($tenantDatabase in $databaseBatch)
     {
-      $recoveredServer = Find-AzureRmResource -ResourceGroupNameEquals $WingtipRecoveryResourceGroup -ResourceNameEquals ($tenantDatabase.ServerName + $config.RecoverySuffix)
+      $recoveredServerName = ($tenantDatabase.ServerName -split $config.OriginRoleSuffix)[0] + $config.RecoveryRoleSuffix
+      $recoveredServer = Find-AzureRmResource -ResourceGroupNameEquals $WingtipRecoveryResourceGroup -ResourceNameEquals $recoveredServerName
       $databaseId = "/subscriptions/$currentSubscriptionId/resourceGroups/$($wtpUser.ResourceGroupName)/providers/Microsoft.Sql/servers/$($tenantDatabase.ServerName)/recoverabledatabases/$($tenantDatabase.DatabaseName)"
       $serviceObjective = ' '
       if ($tenantDatabase.ServiceObjective -ne 'ElasticPool')
@@ -227,7 +228,7 @@ while ($recoveredDatabaseCount -lt $tenantDatabaseCount)
     # Mark databases as restored 
     foreach ($tenantDatabase in $databaseBatch)
     {
-      $restoredServerName = $tenantDatabase.ServerName + $config.RecoverySuffix
+      $restoredServerName = ($tenantDatabase.ServerName -split $config.OriginRoleSuffix)[0] + $config.RecoveryRoleSuffix
 
       # Enable change tracking on tenant database. This tracks any changes to tenant data that will need to be repatriated when the primary region is available once more. 
       Enable-ChangeTrackingForTenant -Catalog $tenantCatalog -TenantServerName $restoredServerName -TenantDatabaseName $tenantDatabase.DatabaseName -RetentionPeriod 10

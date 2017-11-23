@@ -24,8 +24,8 @@ $config = Get-Configuration
 
 # Get catalog
 Write-Output "Getting catalog..."
-$catalogServerName = $config.CatalogServerNameStem + $wtpUser.Name
-$catalogAliasName = $catalogServerName + "-alias"
+$catalogServerName = $config.CatalogServerNameStem + $wtpUser.Name + $config.OriginRoleSuffix
+$catalogAliasName = "catalog-" + $wtpUser.Name
 $fullyQualifiedCatalogDnsAlias = $catalogAliasName + ".database.windows.net"
 
 
@@ -61,7 +61,7 @@ foreach ($tenantDatabase in $tenantDatabaseList)
     $tenantName = (Get-TenantNameFromTenantDatabase -TenantServerFullyQualifiedName $tenantDatabase.Server -TenantDatabaseName $tenantDatabase.Database).VenueName
     $fullyQualifiedTenantServerName = $tenantDatabase.Server 
     $tenantServerName = $fullyQualifiedTenantServerName.split('.',2)[0]
-    $tenantAliasName = $tenantDatabase.Database + "-" + $wtpUser.Name + "-alias"
+    $tenantAliasName = $tenantDatabase.Database + "-" + $wtpUser.Name
     $fullyQualifiedTenantDnsAlias = $tenantAliasName + ".database.windows.net"
 
     try 
@@ -104,7 +104,7 @@ while ($tenantAliasInProgress)
             # Update catalog to include tenant alias
             $tenantKey = Get-TenantKey -TenantName $tenant.TenantName
             $tenantShard = ($catalogObject.ShardMap.GetMappingForKey($tenantKey)).Shard.Location
-            if ($tenantShard.Server -NotMatch "alias.database.windows.net$")
+            if ($tenantShard.Server -Match "home.database.windows.net$")
             {
                 Write-Output "Updating catalog entry for tenant '$($tenant.TenantName)'..."
              

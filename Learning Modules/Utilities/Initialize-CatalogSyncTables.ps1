@@ -35,8 +35,8 @@ $catalog = Get-Catalog -ResourceGroupName $WtpResourceGroupName -WtpUser $WtpUse
 # Initialize extended catalog tables 
 $adminUserName = $config.CatalogAdminUserName
 $adminPassword = $config.CatalogAdminPassword 
-$catalogDatabase = $config.CatalogDatabaseName
-$catalogServer = $config.CatalogServerNameStem + $WtpUser
+$catalogDatabase = $catalog.Database.DatabaseName
+$catalogServer = $catalog.Database.ServerName
 $fullyQualifiedCatalogServerName = $catalogServer + ".database.windows.net"
 $commandText = "
     IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Servers')
@@ -106,12 +106,12 @@ $commandText = "
                     END AS TenantStatus,
                     tenant.ServicePlan,
                     CASE
-                        WHEN shard.ServerName LIKE '%alias.database.windows.net' THEN shard.ServerName
+                        WHEN ((shard.ServerName NOT LIKE '%home.database.windows.net') AND (shard.ServerName NOT LIKE '%recovery.database.windows.net')) THEN shard.ServerName
                         ELSE NULL
                     END AS TenantAlias,
                     CASE
-                        WHEN shard.ServerName LIKE '%alias.database.windows.net' THEN tenantDB.ServerName
-                        ELSE shard.ServerName
+                        WHEN ((shard.ServerName LIKE '%home.database.windows.net') OR (shard.ServerName LIKE '%recovery.database.windows.net')) THEN shard.ServerName
+                        ELSE tenantDB.ServerName
                     END AS ServerName,
                     shard.DatabaseName,
                     tenant.RecoveryState AS TenantRecoveryState,

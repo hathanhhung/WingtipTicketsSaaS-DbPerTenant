@@ -84,8 +84,6 @@ $intenseLoadFactor = 15.00
 # 0 removes the effect, 0.1 will double the typical interval for 10 dbs  
 $densityLoadFactor = 0.1
 
-$CatalogServerName = $config.CatalogServerNameStem + $WtpUser + "-alias"
-
 $jobs = @{}
 
 ## Start job invocation loop

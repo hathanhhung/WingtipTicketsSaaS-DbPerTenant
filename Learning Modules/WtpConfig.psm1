@@ -1,7 +1,6 @@
 # Get and/or set PowerShell session to only run scripts targeting dbpertenant Wingtip deployment 
 $Global:ErrorActionPreference = "Stop"
 $scriptsTarget = 'dbpertenant'
-
 if ($Global:WingtipScriptsTarget -and ($Global:WingtipScriptsTarget -ne $scriptsTarget))
 {
     throw "This PowerShell session is setup to only run scripts targeting Wingtip '$Global:WingtipScriptsTarget' architecture. Open up a new PowerShell session to run scripts targeting Wingtip '$scriptsTarget' architecture."  
@@ -11,6 +10,7 @@ elseif (!$Global:WingtipScriptsTarget)
     Write-Verbose "Configuring PowerShell session to only run scripts targeting Wingtip '$scriptsTarget' architecture ..."
     Set-Variable WingtipScriptsTarget -option Constant -value $scriptsTarget -scope global
 }
+
 
 <#
 .SYNOPSIS
@@ -31,22 +31,23 @@ function Get-Configuration
         LogAnalyticsDeploymentLocation = "westcentralus"
         DatabaseAndBacpacTemplate = "databaseandbacpactemplate.json"
         TenantBacpacUrl = "https://wingtipsaas.blob.core.windows.net/bacpacs/wingtiptenantdb.bacpac"
-        EventsAppNameStem = "eventswtp-"
-        RecoverySuffix = "-recovery"
+        EventsAppNameStem = "events-wingtip-dpt-"
         GoldenTenantDatabaseName = "baseTenantDB"
         CatalogDatabaseName = "tenantcatalog"
-        CatalogServerNameStem = "catalog-"
-        CatalogRecoveryTemplate = "tenantcatalogrecoverytemplate.json"
-        TenantServerNameStem = "tenants1-"
-        TenantElasticPoolRestoreBatchTemplate = "tenantelasticpoolrecoverybatchtemplate.json"
-        TenantDatabaseRestoreBatchTemplate = "tenantdatabaserecoverybatchtemplate.json"
-        TenantServerRestoreBatchTemplate = "tenantserverrecoverybatchtemplate.json"
+        CatalogServerNameStem = "catalog-dpt-"
+        TenantServerNameStem = "tenants1-dpt-"
+        OriginRoleSuffix = "-home"
+        RecoveryRoleSuffix = "-recovery"
         TenantPoolNameStem = "Pool"
         CatalogShardMapName = "tenantcatalog"
+        CatalogRecoveryTemplate = "tenantcatalogrecoverytemplate.json"
         CatalogAdminUserName = "developer"
         CatalogAdminPassword = "P@ssword1"
         TenantAdminUserName = "developer"
         TenantAdminPassword = "P@ssword1"
+        TenantElasticPoolRestoreBatchTemplate = "tenantelasticpoolrecoverybatchtemplate.json"
+        TenantDatabaseRestoreBatchTemplate = "tenantdatabaserecoverybatchtemplate.json"
+        TenantServerRestoreBatchTemplate = "tenantserverrecoverybatchtemplate.json"
         CatalogManagementAppNameStem = "catalogmanagement-"
         CatalogManagementAppSku = "standard"
         CatalogManagementAppSkuCode = "S1"
@@ -60,9 +61,8 @@ function Get-Configuration
         TenantAnalyticsDatabaseName = "tenantanalytics"
         TenantAnalyticsCSDatabaseName = "tenantanalytics-cs"
         TenantAnalyticsDWDatabaseName = "tenantanalytics-dw"
-        AdhocAnalyticsDatabaseName = "adhocanalytics"
-        AdhocAnalyticsDatabaseServiceObjective = "S0"
-        AdhocAnalyticsBacpacUrl = "https://wtpdeploystorageaccount.blob.core.windows.net/wingtip-bacpacsvold/adhoctenantanalytics.bacpac"
+        AdhocReportingDatabaseName = "adhocreporting"
+        AdhocReportingDatabaseServiceObjective = "S0"
         SearchDatabaseName = "tenantsearch"  
         SearchDatabaseServiceObjective = "S0"              
         StorageKeyType = "SharedAccessKey"

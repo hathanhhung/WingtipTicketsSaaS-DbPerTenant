@@ -36,12 +36,14 @@
   "variables": {
       "lowerCaseUser": "[toLower(parameters('wtpUser'))]",
       "catalogDatabaseName": "tenantcatalog",
-      "trafficManagerProfile": "[concat('eventswtp-', variables('lowerCaseUser'))]",
-      "trafficManagerURL": "[concat('events.wtp.',variables('lowerCaseUser'))]",
+      "databasePerTenantSuffix": "dpt",
+      "originRoleSuffix": "-home",
+      "trafficManagerInstance": "[concat('events-wingtip-',variables('databasePerTenantSuffix'),'-',variables('lowerCaseUser'), '-', 'profiles')]",
+      "trafficManagerRecoveryProfileName": "[concat('events-wingtip-', variables('databasePerTenantSuffix'), '-', variables('lowerCaseUser'), parameters('recoverySuffix'))]",
       "recoveryLocation": "[resourceGroup().location]",
       "recoveryWebAppSku": "Standard",
-      "wtpEventsRecoveryApp": "[concat('eventswtp-',variables('lowerCaseUser'), parameters('recoverySuffix'))]",
-      "wtpEventsAppPackageUri": "https://wingtipsaas.blob.core.windows.net/packages-dpt/eventsAppPackage.zip"
+      "wtpEventsRecoveryApp": "[concat('events-wingtip-', variables('databasePerTenantSuffix'), '-', variables('lowerCaseUser'), parameters('recoverySuffix'))]",
+      "wtpEventsAppPackageUri": "https://wingtipsaas.blob.core.windows.net/packages-dpt/eventsAppPackage-v4.zip"
   },
   "resources": [
     {
@@ -137,7 +139,7 @@
             {
               "apiVersion": "2015-11-01",
               "type": "Microsoft.Network/trafficManagerProfiles/azureEndpoints",
-              "name": "[concat(variables('trafficManagerProfile'), '/', variables('wtpEventsRecoveryApp'))]",
+              "name": "[concat(variables('trafficManagerInstance'), '/', variables('trafficManagerRecoveryProfileName'))]",
               "location": "global",
               "properties": {
                 "targetResourceId": "[resourceId('Microsoft.Web/sites/',variables('wtpEventsRecoveryApp'))]",

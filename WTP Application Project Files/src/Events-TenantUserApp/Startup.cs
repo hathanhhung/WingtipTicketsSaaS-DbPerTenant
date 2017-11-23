@@ -226,7 +226,10 @@ namespace Events_TenantUserApp
 
             TenantServerConfig = new TenantServerConfig
             {
-                TenantServer = Configuration["TenantServer"] + ".database.windows.net"
+                TenantServer = Configuration["TenantServer"] + ".database.windows.net",
+                ContosoConcertHallServerAlias = Configuration["ContosoConcertHallAlias"] + ".database.windows.net",
+                FabrikamJazzClubServerAlias = Configuration["FabrikamJazzClubAlias"] + ".database.windows.net",
+                DogwoodDojoServerAlias = Configuration["DogwoodDojoAlias"] + ".database.windows.net"
             };
 
             bool isResetEventDatesEnabled = false;

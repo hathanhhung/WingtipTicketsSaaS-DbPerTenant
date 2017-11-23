@@ -33,6 +33,9 @@ namespace Events_Tenant.Common.Utilities
     public class TenantServerConfig
     {
         public string TenantServer { get; set; }
+        public string ContosoConcertHallServerAlias { get; set; }
+        public string FabrikamJazzClubServerAlias { get; set; }
+        public string DogwoodDojoServerAlias { get; set; }
 
         /// <summary>
         /// Boolean value to specify if the events dates need to be reset
@@ -42,6 +45,7 @@ namespace Events_Tenant.Common.Utilities
         ///   <c>true</c> if [reset event dates]; otherwise, <c>false</c>.
         /// </value>
         public bool ResetEventDates { get; set; }
+
     }
 
     /// <summary>

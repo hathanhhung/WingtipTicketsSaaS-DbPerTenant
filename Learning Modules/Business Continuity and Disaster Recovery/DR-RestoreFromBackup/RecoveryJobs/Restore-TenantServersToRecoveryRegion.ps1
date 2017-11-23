@@ -76,13 +76,13 @@ while (($pastDeployment) -and ($pastDeployment.ProvisioningState -NotIn "Succeed
 # Get list of servers to be recovered 
 # Note: It is also possible to scope recovery to a smaller list of servers.
 $serverList = @()
-$serverList += Get-ExtendedServer -Catalog $tenantCatalog | Where-Object {($_.ServerName -NotMatch "$($config.RecoverySuffix)$")}
+$serverList += Get-ExtendedServer -Catalog $tenantCatalog | Where-Object {($_.ServerName -NotMatch "$($config.RecoveryRoleSuffix)$")}
 $restoredServers = Find-AzureRmResource -ResourceGroupNameEquals $WingtipRecoveryResourceGroup -ResourceType "Microsoft.sql/servers"
 
 foreach ($server in $serverList)
 {
   # Only recover servers that haven't already been recovered or haven't started repatriation
-  $serverRecoveryName = $server.ServerName + $config.RecoverySuffix
+  $serverRecoveryName = ($server.ServerName -split $config.OriginRoleSuffix)[0] + $config.RecoveryRoleSuffix
   if (($server.RecoveryState -In "n/a","restoring","complete") -and ($restoredServers.Name -notcontains $serverRecoveryName))
   {
     $serverQueue += $serverRecoveryName
@@ -127,7 +127,8 @@ if ($serverQueue.Count -gt 0)
   # Mark 'origin' servers as recovered 
   foreach ($server in $serverQueue)
   {
-    $serverState = Update-TenantResourceRecoveryState -Catalog $tenantCatalog -UpdateAction "endRecovery" -ServerName ($server -split $config.RecoverySuffix)[0]
+    $originServerName = ($server -split $config.RecoveryRoleSuffix)[0] + $config.OriginRoleSuffix
+    $serverState = Update-TenantResourceRecoveryState -Catalog $tenantCatalog -UpdateAction "endRecovery" -ServerName $originServerName
   }
   $recoveredServers += $serverQueue.Length
 }

@@ -42,7 +42,26 @@ namespace Events_Tenant.Common.Utilities
             foreach (var tenant in tenants)
             {
                 var tenantId = GetTenantKey(tenant);
-                var result = await Sharding.RegisterNewShard(tenant, tenantId, tenantServerConfig.TenantServer, databaseConfig.DatabaseServerPort, catalogConfig.ServicePlan);
+                var tenantAlias = "";
+
+                if (tenant.Contains("contoso"))
+                {
+                    tenantAlias = tenantServerConfig.ContosoConcertHallServerAlias;
+                }
+                else if (tenant.Contains("fabrikam"))
+                {
+                    tenantAlias = tenantServerConfig.FabrikamJazzClubServerAlias;
+                }
+                else if (tenant.Contains("dogwood"))
+                {
+                    tenantAlias = tenantServerConfig.DogwoodDojoServerAlias;
+                }
+                else
+                {
+                    tenantAlias = tenantServerConfig.TenantServer;
+                }
+
+                var result = await Sharding.RegisterNewShard(tenant, tenantId, tenantAlias, databaseConfig.DatabaseServerPort, catalogConfig.ServicePlan);
                 if (result)
                 {
                     // resets all tenants' event dates

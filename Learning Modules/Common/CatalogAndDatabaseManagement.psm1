@@ -301,7 +301,7 @@ function Get-Catalog
     $config = Get-Configuration
 
     # Get DNS alias for catalog server 
-    $catalogAlias = $config.CatalogServerNameStem + $WtpUser + "-alias.database.windows.net"
+    $catalogAlias = "catalog-" + $WtpUser + ".database.windows.net"
     
     # Resolve alias to current catalog server 
     $catalogServerName = Get-ServerNameFromAlias $catalogAlias
@@ -716,7 +716,7 @@ function Get-TenantAlias
     )
 
     $requestedTenantAlias = $null
-    $requestedTenantAlias = (Get-NormalizedTenantName $TenantName) + "-" + $WtpUser + "-alias"
+    $requestedTenantAlias = (Get-NormalizedTenantName $TenantName) + "-" + $WtpUser
     $fullyQualifiedTenantAlias = $requestedTenantAlias + ".database.windows.net"
 
     # Check if input alias exists
@@ -1473,10 +1473,11 @@ function New-TenantDatabase
         # Construct the resource id for the 'golden' tenant database 
         $AzureContext = Get-AzureRmContext
         $subscriptionId = Get-SubscriptionId
-        $SourceDatabaseId = "/subscriptions/$($subscriptionId)/resourcegroups/$ResourceGroupName/providers/Microsoft.Sql/servers/$($config.CatalogServerNameStem)$WtpUser/databases/$($config.GoldenTenantDatabaseName)"
+        $catalogServerName = $config.CatalogServerNameStem + $WtpUser + $config.OriginRoleSuffix 
+        $SourceDatabaseId = "/subscriptions/$($subscriptionId)/resourcegroups/$ResourceGroupName/providers/Microsoft.Sql/servers/$catalogServerName/databases/$($config.GoldenTenantDatabaseName)"
 
         # Compose tenant alias name 
-        $tenantAlias = $normalizedTenantName + "-" + $WtpUser + "-alias"
+        $tenantAlias = $normalizedTenantName + "-" + $WtpUser
 
         # Use an ARM template to create the tenant database by copying the 'golden' database
         $deployment = New-AzureRmResourceGroupDeployment `
@@ -1796,7 +1797,7 @@ function Remove-Tenant
 
     # Delete tenant database alias
     $tenantAliasName = ($tenantShard.Location.Server).Split('.')[0]
-    if ($tenantAliasName -match "-alias$")
+    if ($tenantAliasName -notmatch "-home$|-recovery$")
     {
         Remove-AzureRMSqlServerDNSAlias –ResourceGroupName $tenantServer.ResourceGroupName `
             -ServerDNSAliasName $tenantAliasName `
@@ -1992,43 +1993,24 @@ function Set-DnsAlias
     # Check if input alias exists
     $aliasExists = Test-IfDnsAlias $fullyQualifiedDNSAlias 
 
-    # # Remove existing alias if it exists already 
-    # if ($aliasExists)
-    # {
-    #     Remove-AzureRMSqlServerDNSAlias `
-    #         -ResourceGroupName $OldResourceGroupName `
-    #         -ServerName $OldServerName `
-    #         -ServerDNSAliasName $ServerDNSAlias `
-    #         -Force `
-    #         -ErrorAction SilentlyContinue `
-    #         >$null
-    # }
-   
-    # # Create new DNS alias using provided parameters 
-    # New-AzureRmSqlServerDNSAlias `
-    #     -ResourceGroupName $ResourceGroupName `
-    #     -ServerName $ServerName `
-    #     -ServerDNSAliasName $ServerDNSAlias `
-    #     >$null
-
     # Update alias if it exists already 
     if ($aliasExists)
     {
         $subscriptionId = Get-SubscriptionId
         Set-AzureRmSqlServerDNSAlias `
+            -Name $ServerDNSAlias `
             -ResourceGroupName $ResourceGroupName `
-            -NewServerName $ServerName `
-            -ServerDNSAliasName $ServerDNSAlias `
-            -OldServerResourceGroupName $OldResourceGroupName `
-            -OldServerName $OldServerName `
-            -OldServerSubscriptionId $subscriptionId
+            -TargetServerName $ServerName `
+            -SourceServerResourceGroupName $OldResourceGroupName `
+            -SourceServerName $OldServerName `
+            -SourceServerSubscriptionId $subscriptionId
     }
     else
     {
         New-AzureRmSqlServerDNSAlias `
             -ResourceGroupName $ResourceGroupName `
             -ServerName $ServerName `
-            -ServerDNSAliasName $ServerDNSAlias `
+            -DnsAliasName $ServerDNSAlias `
             >$null
     }
 
@@ -2215,7 +2197,7 @@ function Set-TenantAlias
     )
 
     $requestedTenantAlias = $null
-    $requestedTenantAlias = (Get-NormalizedTenantName $TenantName) + "-" + $WtpUser + "-alias"
+    $requestedTenantAlias = (Get-NormalizedTenantName $TenantName) + "-" + $WtpUser
     $fullyQualifiedTenantAlias = $requestedTenantAlias + ".database.windows.net"
 
     # Check if input alias exists

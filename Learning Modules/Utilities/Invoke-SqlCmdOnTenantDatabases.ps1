@@ -60,8 +60,8 @@ foreach ($shard in $Shards)
 $adminUserName = $config.CatalogAdminUserName
 $adminPassword = $config.CatalogAdminPassword
 
-$catalogServer = $config.CatalogServerNameStem + $WtpUser
-$fullyQualifiedCatalogServerName = $catalogServer + "-alias.database.windows.net"
+$catalogServer = $catalog.Database.ServerName
+$fullyQualifiedCatalogServerName = $catalogServer + ".database.windows.net"
 $goldenTenantDatabase = $config.GoldenTenantDatabaseName
 
     Write-Output "Applying script to database '$goldenTenantDatabase' on server '$catalogServer'."

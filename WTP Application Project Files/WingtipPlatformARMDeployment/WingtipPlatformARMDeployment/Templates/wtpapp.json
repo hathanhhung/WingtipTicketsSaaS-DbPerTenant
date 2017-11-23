@@ -24,23 +24,27 @@
         "sqlCollation": "SQL_Latin1_General_CP1_CI_AS",
         "sqlEdition": "Standard",
         "databasePerTenantSuffix": "dpt",
-        "catalogServerName": "[concat('catalog','-',variables('databasePerTenantSuffix'))]",
+        "originRoleSuffix": "-home",
         "catalogDatabaseName": "tenantcatalog",
-        "catalogServer": "[concat(variables('catalogServerName'),'-', variables('lowerCaseUser'))]",
+        "catalogServer": "[concat('catalog', '-', variables('databasePerTenantSuffix'), '-', variables('lowerCaseUser'), variables('originRoleSuffix'))]",
+        "catalogServerAlias": "[concat('catalog','-', variables('lowerCaseUser'))]",
         "baseTenantDB": "basetenantdb",
-        "tenantServerName": "[concat('tenants1','-',variables('databasePerTenantSuffix'))]",
         "tenantContosoConcertHall": "contosoconcerthall",
+        "contosoconcerthallAlias": "[concat(variables('tenantContosoConcertHall'), '-', variables('lowerCaseUser'))]",
         "tenantFabrikamJazzClub": "fabrikamjazzclub",
+        "fabrikamjazzclubAlias": "[concat(variables('tenantFabrikamJazzClub'), '-', variables('lowerCaseUser'))]",
         "tenantDogwoodDojo": "dogwooddojo",
-        "tenantServer": "[concat(variables('tenantservername'),'-',variables('lowerCaseUser'))]",
+        "dogwooddojoAlias": "[concat(variables('tenantDogwoodDojo'), '-', variables('lowerCaseUser'))]",
+        "tenantServer": "[concat('tenants1', '-', variables('databasePerTenantSuffix'), '-', variables('lowerCaseUser'), variables('originRoleSuffix'))]",
         "tenantContosoConcertHallStorageUri": "[concat('https://wingtipsaas.blob.core.windows.net/bacpacs-dpt/',variables('tenantContosoConcertHall'),'.bacpac')]",
         "tenantFabrikamJazzClubStorageUri": "[concat('https://wingtipsaas.blob.core.windows.net/bacpacs-dpt/',variables('tenantFabrikamJazzClub'),'.bacpac')]",
         "tenantDogwoodDojoStorageUri": "[concat('https://wingtipsaas.blob.core.windows.net/bacpacs-dpt/',variables('tenantDogwoodDojo'),'.bacpac')]",
         "catalogDatabaseStorageUri": "https://wingtipsaas.blob.core.windows.net/bacpacs-dpt/wingtipcatalogdb.bacpac",
         "baseTenantDatabaseStorageUri": "https://wingtipsaas.blob.core.windows.net/bacpacs-dpt/wingtiptenantdb.bacpac",
         "wtpEventsAppTrafficManagerUniqueDnsName": "[concat('events.wingtip','-',variables('databasePerTenantSuffix'),'.',variables('lowerCaseUser'))]",
-        "wtpEventsApp": "[concat('events-wingtip-',variables('databasePerTenantSuffix'),'-',variables('lowerCaseUser'))]",
-        "wtpEventsAppPackageUri": "https://wingtipsaas.blob.core.windows.net/packages-dpt/eventsAppPackage-v3.zip"
+        "wtpEventsApp": "[concat('events-wingtip-',variables('databasePerTenantSuffix'),'-',variables('lowerCaseUser'), variables('originRoleSuffix'))]",
+        "wtpEventsAppPackageUri": "https://wingtipsaas.blob.core.windows.net/packages-dpt/eventsAppPackage-v4.zip",
+        "wtpEventsTrafficManagerProfileName": "[concat('events-wingtip-',variables('databasePerTenantSuffix'),'-',variables('lowerCaseUser'), '-', 'profiles')]"
     },
     "resources": [
         {
@@ -133,7 +137,7 @@
                         "[concat('Microsoft.Sql/servers/',variables('tenantServer'),'/databases/',variables('tenantContosoConcertHall'),'/extensions/Import')]"
                     ],
                     "apiVersion": "2017-03-01-preview",
-                    "name": "[concat(variables('tenantServer'), '/', variables('tenantContosoConcertHall'), '-', variables('lowerCaseUser'), '-alias')]",
+                    "name": "[concat(variables('tenantServer'), '/', variables('contosoconcerthallAlias'))]",
                     "type": "Microsoft.Sql/servers/dnsAliases",
                     "properties": {}
                 },
@@ -177,7 +181,7 @@
                         "[concat('Microsoft.Sql/servers/',variables('tenantServer'),'/databases/',variables('tenantFabrikamJazzClub'),'/extensions/Import')]"
                     ],
                     "apiVersion": "2017-03-01-preview",
-                    "name": "[concat(variables('tenantServer'), '/', variables('tenantFabrikamJazzClub'), '-', variables('lowerCaseUser'), '-alias')]",
+                    "name": "[concat(variables('tenantServer'), '/', variables('fabrikamjazzclubAlias'))]",
                     "type": "Microsoft.Sql/servers/dnsAliases",
                     "properties": {}
                 },
@@ -221,7 +225,7 @@
                         "[concat('Microsoft.Sql/servers/',variables('tenantServer'),'/databases/',variables('tenantDogwoodDojo'),'/extensions/Import')]"
                     ],
                     "apiVersion": "2017-03-01-preview",
-                    "name": "[concat(variables('tenantServer'), '/', variables('tenantDogwoodDojo'), '-', variables('lowerCaseUser'), '-alias')]",
+                    "name": "[concat(variables('tenantServer'), '/', variables('dogwooddojoAlias'))]",
                     "type": "Microsoft.Sql/servers/dnsAliases",
                     "properties": {}
                 }
@@ -339,7 +343,7 @@
                 "[concat('Microsoft.Sql/servers/',variables('catalogServer'))]"
             ],
             "apiVersion": "2017-03-01-preview",
-            "name": "[concat(variables('catalogServer'), '/', variables('catalogServer'), '-alias')]",
+            "name": "[concat(variables('catalogServer'), '/', variables('catalogServerAlias'))]",
             "properties": {},
             "type": "Microsoft.Sql/servers/dnsAliases"
         },
@@ -409,6 +413,9 @@
                         "ServicePlan": "Standard",
                         "SqlProtocol": "tcp",
                         "TenantServer": "[variables('tenantServer')]",
+                        "ContosoConcertHallAlias": "[variables('contosoconcerthallAlias')]",
+                        "FabrikamJazzClubAlias": "[variables('fabrikamjazzclubAlias')]",
+                        "DogwoodDojoAlias": "[variables('dogwooddojoAlias')]",
                         "LearnHowFooterUrl": "https://aka.ms/sqldbsaastutorial",
                         "ASPNETCORE_ENVIRONMENT": "Production",
                         "WEBSITE_NODE_DEFAULT_VERSION": "4.2.3",
@@ -429,7 +436,7 @@
             ],
             "apiVersion": "2015-11-01",
             "type": "Microsoft.Network/trafficManagerProfiles",
-            "name": "[variables('wtpEventsApp')]",
+            "name": "[variables('wtpEventsTrafficManagerProfileName')]",
             "location": "global",
             "properties": {
                 "profileStatus": "Enabled",
@@ -446,7 +453,7 @@
                 "endpoints": [
                     {
                         "dependsOn": [
-                            "[resourceId('Microsoft.Network/trafficManagerProfiles/',variables('wtpEventsApp'))]",
+                            "[resourceId('Microsoft.Network/trafficManagerProfiles/',variables('wtpEventsTrafficManagerProfileName'))]",
                             "[concat('Microsoft.Web/sites/',variables('wtpEventsApp'))]"
                         ],
                         "type": "Microsoft.Network/trafficManagerProfiles/azureEndpoints",
@@ -465,7 +472,7 @@
     "outputs": {
         "Events_URL": {
             "type": "string",
-            "value": "[concat('http://', reference(resourceId('Microsoft.Network/trafficManagerProfiles', variables('wtpEventsApp'))).dnsconfig.fqdn)]"
+            "value": "[concat('http://', reference(resourceId('Microsoft.Network/trafficManagerProfiles', variables('wtpEventsTrafficManagerProfileName'))).dnsconfig.fqdn)]"
         }
     }
 }

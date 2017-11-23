@@ -19,7 +19,7 @@ To deploy the app to Azure, click the blue link below. Deploy the app in a new r
     <img src="http://azuredeploy.net/deploybutton.png"/>
 </a>
 
-The basic application, which includes three pre-defined databases for three venues, can be installed in your Azure subscription under a single ARM resource group. After deployment completes, launch the app by browsing to ```http://events.wtp.USER.trafficmanager.net```, substituting *USER* with the value you set during deployment. To uninstall the application, delete the resource group from the Azure Portal.
+The basic application, which includes three pre-defined databases for three venues, can be installed in your Azure subscription under a single ARM resource group. After deployment completes, launch the app by browsing to ```http://events.wingtip-dpt.USER.trafficmanager.net```, substituting *USER* with the value you set during deployment. To uninstall the application, delete the resource group from the Azure Portal.
 
 
 ## How to run management scripts and tutorials
@@ -39,7 +39,10 @@ The basic application, which includes three pre-defined databases for three venu
 
 4. Run the demo scripts present in the 'Learning Modules' folder.
 
+5. Open the 'GeoRestoreTutorial' document in the Github repo to start the tutorial for disaster recovery using the Azure SQL database geo-restore capability
+
 ## Architecture
+![Wingtip Architectures](TutorialMedia/AppVersions.png)
 The sample uses a database-per-tenant model, with a database created for each venue.  
 These databases are hosted in elastic database pools to provide easy performance management, and to cost-effectively accommodate the unpredictable usage patterns of these small venues and their customers.  
 An additional catalog database holds the mapping between tenants and their databases.  This mapping is managed using the Shard Map Management features of the Elastic Database Client Library.  
