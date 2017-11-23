@@ -37,12 +37,13 @@ The basic application, which includes three pre-defined databases for three venu
 
 3. Clone the repo to your local machine. Or Download and extract the repo to your local machine from a zip file.
 
-4. Run the demo scripts present in the 'Learning Modules' folder.
+4. Open the [GeoRestoreTutorial document](Learning%20Modules\Business%20Continuity%20and%20Disaster%20Recovery\DR-RestoreFromBackup\GeoRestoreTutorial.md) in the '...Learning Modules\Business Continuity and Disaster Recovery\DR-RestoreFromBackup' to start the tutorial for disaster recovery using the Azure SQL database geo-restore capability
 
-5. Open the 'GeoRestoreTutorial' document in the Github repo to start the tutorial for disaster recovery using the Azure SQL database geo-restore capability
+5. Run the demo scripts present in the '...Learning Modules\Business Continuity and Disaster Recovery\DR-RestoreFromBackup' folder.
+
 
 ## Architecture
-![Wingtip Architectures](TutorialMedia/AppVersions.PNG)
+![Wingtip Architectures](AppVersions.PNG)
 The sample uses a database-per-tenant model, with a database created for each venue.  
 These databases are hosted in elastic database pools to provide easy performance management, and to cost-effectively accommodate the unpredictable usage patterns of these small venues and their customers.  
 An additional catalog database holds the mapping between tenants and their databases.  This mapping is managed using the Shard Map Management features of the Elastic Database Client Library.  
