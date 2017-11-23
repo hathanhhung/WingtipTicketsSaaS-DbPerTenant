@@ -42,7 +42,7 @@ The basic application, which includes three pre-defined databases for three venu
 5. Open the 'GeoRestoreTutorial' document in the Github repo to start the tutorial for disaster recovery using the Azure SQL database geo-restore capability
 
 ## Architecture
-![Wingtip Architectures](TutorialMedia/AppVersions.png)
+![Wingtip Architectures](TutorialMedia/AppVersions.PNG)
 The sample uses a database-per-tenant model, with a database created for each venue.  
 These databases are hosted in elastic database pools to provide easy performance management, and to cost-effectively accommodate the unpredictable usage patterns of these small venues and their customers.  
 An additional catalog database holds the mapping between tenants and their databases.  This mapping is managed using the Shard Map Management features of the Elastic Database Client Library.  
