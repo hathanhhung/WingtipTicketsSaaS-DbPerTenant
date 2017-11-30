@@ -3,12 +3,12 @@ Sample multi-tenant SaaS application and associated management scripts.
 Built on SQL Database using a database-per-tenant model. 
 
 ## Overview
-This project provides a sample SaaS application 'WingtipTicketsSaaS' that embodies many common SaaS patterns that can be used with Azure SQL Database. The Wingtip Tickets SaaS sample is based on an event-management and ticket-selling scenario for small venues. Each venue is a 'tenant' of the SaaS application. In this variation of the SaaS application, a DNS alias is created for each tenant. This ensures that no app change is required during a disaster recovery event.
+This project provides a sample SaaS application 'WingtipTicketsSaaS' that embodies many common SaaS patterns that can be used with Azure SQL Database. The Wingtip Tickets SaaS sample is based on an event-management and ticket-selling scenario for small venues. Each venue is a 'tenant' of the SaaS application. In this variation of the SaaS application, a DNS alias is created for each tenant database. This ensures that no connection string change is required in the app during a disaster recovery event or when repatriating databases afterwards.
 
 ## Differences from main 'Database per Tenant' project
-* Deploys the WingtipTicketsSaaS application with tenant aliases that are used to ensure no app change is required during disaster recovery
-* Includes script that modifies existing 'dbpertenant' deployment to include aliases for tenants and the catalog database (*Initialize-WingtipSaaSAliases.ps1*)
-* Includes catalog functions that operate using tenant alias in order to be agnostic to which region a Wingtip deployment is currently running in
+* Deploys the Wingtip Tickets SaaS application with tenant database aliases that are used to ensure no app change is required during disaster recovery
+* Includes a script that modifies an existing 'dbpertenant' deployment to include aliases for tenant databases and the catalog database (*Initialize-WingtipSaaSAliases.ps1*)
+* Includes catalog functions that operate using tenant aliases in order to be unaffected by the recovery of databases into another region
 
 ## How to deploy sample app
 >**NOTE:** if you install the application, you will be charged for the Azure resources created.  Actual costs incurred are based on your subscription offer type but are nominal if the application is not scaled up unreasonably and is deleted promptly after you have finished exploring the tutorials.
