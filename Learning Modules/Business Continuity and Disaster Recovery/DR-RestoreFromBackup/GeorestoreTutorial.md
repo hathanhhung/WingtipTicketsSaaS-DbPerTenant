@@ -17,9 +17,9 @@ To complete this tutorial, make sure the following prerequisites are completed:
 
 ![Recovery Architecture](TutorialMedia/recoveryarchitecture.png)
 
-Recovering a SaaS app into a recovery region can be challenging. Doubly so if the app is operating at scale. In addition to creating backup instances in a recovery region, you have to coordinate the recovery to ensure that: your highest priority tenants are least affected, all existing connections to tenant resources are routed to the recovered instances when they become available, and there are minimal or no code changes that you will have to undo once the outage is fixed. All of this has to be done in a speedy, and cost-effective manner that allows you to reduce the impact of an outage on your normal business operations. How is this done?
+Recovering a SaaS app into a recovery region can be challenging. Doubly so if the app is operating at scale. In addition to restoring databases from backups into the recovery region, you will want to: minimize the impact on your highest priority tenants, ensure all connections are routed to the recovered databases as they become available, and there are minimal or no code changes that need to be undone undo once the outage is resolved. All of this has to be done in a speedy and cost-effective manner to minimize impact on normal business operations. How is this done?
 
-In this tutorial, these challenges are solved by using the capabilities of Azure SQL database and the Azure platform:
+In this tutorial, these challenges are addressed using capabilities of Azure SQL Database and the Azure platform:
 
 * You use the [geo-restore capability of Azure SQL databases](https://docs.microsoft.com/azure/sql-database/sql-database-disaster-recovery) to restore the tenant databases used by the Wingtip Tickets SaaS database per tenant application. 
 * You use the DNS alias capability of Azure SQL databases to create tenant aliases that will be used by the Wingtip Tickets SaaS app. These aliases can be routed to recovery tenant resources as they become available and help ensure the app can be recovered with no code or configuration changes.
