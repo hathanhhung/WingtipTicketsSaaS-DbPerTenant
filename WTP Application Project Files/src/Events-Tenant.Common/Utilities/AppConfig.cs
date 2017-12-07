@@ -22,6 +22,7 @@ namespace Events_Tenant.Common.Utilities
     /// </summary>
     public class CatalogConfig
     {
+        public string CatalogAlias { get; set; }
         public string CatalogServer { get; set; }
         public string CatalogDatabase { get; set; }
         public string ServicePlan { get; set; }
@@ -54,6 +55,7 @@ namespace Events_Tenant.Common.Utilities
     public class TenantConfig
     {
         public int TenantId { get; set; }
+        public string TenantAlias { get; set; }
         public string VenueName { get; set; }
         public string EventTypeNamePlural { get; set; }
         public string BlobImagePath { get; set; }

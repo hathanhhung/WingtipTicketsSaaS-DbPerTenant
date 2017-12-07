@@ -89,10 +89,7 @@ $commandText = "
         ALTER TABLE [dbo].[Tenants] ADD LastUpdated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
     GO   
 
-    DROP VIEW IF EXISTS [dbo].[TenantsExtended]
-    GO
-
-    CREATE VIEW [dbo].[TenantsExtended]
+    CREATE OR ALTER VIEW [dbo].[TenantsExtended]
     AS        
         WITH databasesWithPriority AS (
             SELECT *, RANK() OVER (PARTITION BY DatabaseName ORDER BY LastUpdated DESC) AS databasePriority FROM Databases  
@@ -118,7 +115,9 @@ $commandText = "
                     tenantServer.Location,
                     CASE
                         WHEN tenantDB.LastUpdated IS NULL THEN tenant.LastUpdated
-                        ELSE tenantDB.LastUpdated
+                        WHEN (tenantDB.LastUpdated > tenant.LastUpdated) THEN tenantDB.LastUpdated
+                        WHEN (tenantDB.LastUpdated < tenant.LastUpdated) THEN tenant.LastUpdated
+                        ELSE tenant.LastUpdated
                     END AS LastUpdated
         FROM        [dbo].[Tenants] AS tenant
         JOIN        [__ShardManagement].[ShardMappingsGlobal] AS mapping ON (tenant.TenantId = mapping.MinValue)

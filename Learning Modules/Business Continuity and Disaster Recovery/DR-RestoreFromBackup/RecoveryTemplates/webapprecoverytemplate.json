@@ -101,7 +101,7 @@
                 "DatabasePassword": "P@ssword1",
                 "DatabaseServerPort": "1433",
                 "DatabaseUser": "developer",
-                "ResetEventDates": "true",
+                "ResetEventDates": "false",
                 "ServicePlan": "Standard",
                 "SqlProtocol": "tcp",
                 "TenantServer": "[parameters('tenantsRecoveryServer')]",

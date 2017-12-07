@@ -185,6 +185,7 @@ while ($true)
         if ($tenant.TenantStatus -ne "Online")
         {
           Set-TenantOnline -Catalog $tenantCatalog -TenantKey $tenantKey
+          $onlineTenantCount += 1
 
           # Update tenant recovery status to 'OnlineInRecovery'
           $tenantState = Update-TenantRecoveryState -Catalog $tenantCatalog -UpdateAction "endAliasFailoverToRecovery" -TenantKey $tenantKey

@@ -547,8 +547,8 @@ function Get-ExtendedServer{
                     -UserName $config.CatalogAdminUserName `
                     -Password $config.CatalogAdminPassword `
                     -ConnectionTimeout 30 `
-                    -QueryTimeout 15 `      
-    
+                    -QueryTimeout 15
+
     return $extendedServers
 }
 
@@ -1154,12 +1154,15 @@ function Invoke-SqlAzure{
         [int] $ConnectionTimeout = 30,
         
         [Parameter(Mandatory=$false)]
-        [int] $QueryTimeout = 60
+        [int] $QueryTimeout = 60,
+
+        [Parameter(Mandatory=$false)]
+        [string] $ApplicationName = 'PowerShell'
       )
     $Query = $Query.Trim()
 
     $connectionString = `
-        "Data Source=$ServerInstance;Initial Catalog=$DatabaseName;Connection Timeout=$ConnectionTimeOut;User ID=$UserName;Password=$Password;Encrypt=true;"
+        "Data Source=$ServerInstance;Initial Catalog=$DatabaseName;Connection Timeout=$ConnectionTimeOut;User ID=$UserName;Password=$Password;Encrypt=true;Application Name=$ApplicationName"
 
     $connection = new-object system.data.SqlClient.SQLConnection($connectionString)
     $command = new-object system.data.sqlclient.sqlcommand($Query,$connection)
@@ -1213,7 +1216,9 @@ function Invoke-SqlAzureWithRetry{
 
         [string]$ConnectionTimeout = 30,
 
-        [int]$QueryTimeout = 30
+        [int]$QueryTimeout = 30,
+
+        [string]$ApplicationName = 'PowerShell'
     )
 
     $tries = 1
@@ -1231,6 +1236,7 @@ function Invoke-SqlAzureWithRetry{
                         -Password $Password `
                         -ConnectionTimeout $ConnectionTimeout `
                         -QueryTimeout $QueryTimeout `
+                        -ApplicationName $ApplicationName
         }
         catch
         {

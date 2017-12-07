@@ -44,34 +44,51 @@ namespace Events_Tenant.Common.Utilities
                 var tenantId = GetTenantKey(tenant);
                 var tenantAlias = "";
 
-                if (tenant.Contains("contoso"))
+                if (tenantId == GetTenantKey("contosoconcerthall"))
                 {
                     tenantAlias = tenantServerConfig.ContosoConcertHallServerAlias;
                 }
-                else if (tenant.Contains("fabrikam"))
+                else if (tenantId == GetTenantKey("fabrikamjazzclub"))
                 {
                     tenantAlias = tenantServerConfig.FabrikamJazzClubServerAlias;
                 }
-                else if (tenant.Contains("dogwood"))
+                else if (tenantId == GetTenantKey("dogwooddojo"))
                 {
                     tenantAlias = tenantServerConfig.DogwoodDojoServerAlias;
                 }
                 else
                 {
-                    tenantAlias = tenantServerConfig.TenantServer;
+                    var wingtipUser = tenantServerConfig.TenantServer.Split('-')[2];
+                    tenantAlias = tenant + "-" + wingtipUser;
                 }
 
-                var result = await Sharding.RegisterNewShard(tenant, tenantId, tenantAlias, databaseConfig.DatabaseServerPort, catalogConfig.ServicePlan);
+                var result = await Sharding.RegisterNewShard(tenant, tenantId, tenantAlias, tenantServerConfig.TenantServer, databaseConfig.DatabaseServerPort, catalogConfig.ServicePlan);
                 if (result)
                 {
                     // resets all tenants' event dates
                     if (resetEventDate)
                     {
                         #region EF6
-                        //use EF6 since execution of Stored Procedure in EF Core for anonymous return type is not supported yet
-                        using (var context = new TenantContext(Sharding.ShardMap, tenantId, connectionString.ConnectionString))
+                        try
                         {
-                            context.Database.ExecuteSqlCommand("sp_ResetEventDates");
+                            //use EF6 since execution of Stored Procedure in EF Core for anonymous return type is not supported yet
+                            using (var context = new TenantContext(Sharding.ShardMap, tenantId, connectionString.ConnectionString))
+                            {
+                                context.Database.ExecuteSqlCommand("sp_ResetEventDates");
+                            }
+                        }
+                        catch (Microsoft.Azure.SqlDatabase.ElasticScale.ShardManagement.ShardManagementException ex)
+                        {
+                            string errorText;
+                            if (ex.ErrorCode == Microsoft.Azure.SqlDatabase.ElasticScale.ShardManagement.ShardManagementErrorCode.MappingIsOffline)
+                                errorText = "Tenant '" + tenant + "' is offline. Could not reset event dates:" + ex.ToString();
+                            else
+                                errorText = ex.ToString();
+                            Console.WriteLine(errorText);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.ToString());
                         }
                         #endregion
 

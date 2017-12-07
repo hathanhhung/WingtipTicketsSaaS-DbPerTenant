@@ -14,16 +14,18 @@ namespace Events_TenantUserApp.Controllers
         private readonly ITenantRepository _tenantRepository;
         private readonly ICatalogRepository _catalogRepository;
         private readonly ILogger _logger;
+        private readonly DnsClient.ILookupClient _client;
 
         #endregion
 
         #region Constructors
 
-        public EventsController(ITenantRepository tenantRepository, ICatalogRepository catalogRepository, IStringLocalizer<BaseController> baseLocalizer, ILogger<EventsController> logger, IConfiguration configuration) : base(baseLocalizer, tenantRepository, configuration)
+        public EventsController(ITenantRepository tenantRepository, ICatalogRepository catalogRepository, IStringLocalizer<BaseController> baseLocalizer, ILogger<EventsController> logger, IConfiguration configuration, DnsClient.ILookupClient client) : base(baseLocalizer, tenantRepository, configuration, client)
         {
             _logger = logger;
             _tenantRepository = tenantRepository;
             _catalogRepository = catalogRepository;
+            _client = client;
         }
 
         #endregion
@@ -52,7 +54,7 @@ namespace Events_TenantUserApp.Controllers
             }
             catch (Microsoft.Azure.SqlDatabase.ElasticScale.ShardManagement.ShardManagementException ex)
             {
-                if (ex.Message.Contains("request is associated with a mapping that is marked ‘Offline’"))
+                if (ex.ErrorCode == Microsoft.Azure.SqlDatabase.ElasticScale.ShardManagement.ShardManagementErrorCode.MappingIsOffline)
                 {
                     var tenantModel = await _catalogRepository.GetTenant(tenant);
                     _logger.LogInformation(0, ex, "Tenant is offline: {tenant}", tenantModel.TenantName);
@@ -61,12 +63,13 @@ namespace Events_TenantUserApp.Controllers
                 else
                 {
                     _logger.LogError(0, ex, "Tenant shard was unavailable for tenant: {tenant}", tenant);
-                    return View("Error");
+                    return View("Error", ex.Message);
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(0, ex, "Get events failed for tenant {tenant}", tenant);
+                return View("Error", ex.Message);
             }
             return View("Error");
         }

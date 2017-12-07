@@ -38,8 +38,9 @@ namespace Events_TenantUserApp.Tests.ControllerTests
             mockTenantRepo.Setup(r => r.AddTicketPurchase(GetTicketPurchaseModel(), 12345)).Returns(GetTicketId());
 
             var mockUtilities = new Mock<IUtilities>();
+            var mockDNSClient = new Mock<DnsClient.ILookupClient>();
 
-            _findSeatsController = new FindSeatsController(mockTenantRepo.Object, mockCatalogRepo.Object, localizer, baseLocalizer, logger, configuration);
+            _findSeatsController = new FindSeatsController(mockTenantRepo.Object, mockCatalogRepo.Object, localizer, baseLocalizer, logger, configuration,mockDNSClient.Object);
         }
 
         [Fact]

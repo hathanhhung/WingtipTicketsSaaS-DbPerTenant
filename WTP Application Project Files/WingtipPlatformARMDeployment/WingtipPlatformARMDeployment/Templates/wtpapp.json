@@ -39,7 +39,7 @@
         "tenantContosoConcertHallStorageUri": "[concat('https://wingtipsaas.blob.core.windows.net/bacpacs-dpt/',variables('tenantContosoConcertHall'),'.bacpac')]",
         "tenantFabrikamJazzClubStorageUri": "[concat('https://wingtipsaas.blob.core.windows.net/bacpacs-dpt/',variables('tenantFabrikamJazzClub'),'.bacpac')]",
         "tenantDogwoodDojoStorageUri": "[concat('https://wingtipsaas.blob.core.windows.net/bacpacs-dpt/',variables('tenantDogwoodDojo'),'.bacpac')]",
-        "catalogDatabaseStorageUri": "https://wingtipsaas.blob.core.windows.net/bacpacs-dpt/wingtipcatalogdb.bacpac",
+        "catalogDatabaseStorageUri": "https://wingtipsaas.blob.core.windows.net/bacpacs-dpt/wingtipcatalogdb-synctables.bacpac",
         "baseTenantDatabaseStorageUri": "https://wingtipsaas.blob.core.windows.net/bacpacs-dpt/wingtiptenantdb.bacpac",
         "wtpEventsAppTrafficManagerUniqueDnsName": "[concat('events.wingtip','-',variables('databasePerTenantSuffix'),'.',variables('lowerCaseUser'))]",
         "wtpEventsApp": "[concat('events-wingtip-',variables('databasePerTenantSuffix'),'-',variables('lowerCaseUser'), variables('originRoleSuffix'))]",
@@ -404,6 +404,7 @@
                     "properties": {
                         "BlobPath": "https://wingtipsaas.blob.core.windows.net/images-dpt/",
                         "ConnectionTimeOut": "30",
+                        "CatalogAlias":  "[variables('catalogServerAlias')]",
                         "CatalogDatabase": "[variables('catalogDatabaseName')]",
                         "CatalogServer": "[variables('catalogServer')]",
                         "DatabasePassword": "P@ssword1",

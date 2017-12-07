@@ -28,12 +28,13 @@ namespace Events_TenantUserApp.Tests.ControllerTests
 
             var mockUtilities = new Mock<IUtilities>();
             var mockTenantRepo = new Mock<ITenantRepository>();
+            var mockDNSClient = new Mock<DnsClient.ILookupClient>();
             mockTenantRepo.Setup(repo => repo.GetVenueDetails(12345)).Returns(GetVenue());
             mockTenantRepo.Setup(repo => repo.GetVenueType("Classic", 12345)).Returns(GetVenueType());
             mockTenantRepo.Setup(repo => repo.GetAllCountries(12345)).Returns(GetCountries());
             mockTenantRepo.Setup(repo => repo.GetEventsForTenant(12345)).Returns(GetEvents());
 
-            _eventsController = new EventsController(mockTenantRepo.Object, mockCatalogRepo.Object, baseLocalizer, logger, configuration);
+            _eventsController = new EventsController(mockTenantRepo.Object, mockCatalogRepo.Object, baseLocalizer, logger, configuration, mockDNSClient.Object);
 
         }
 

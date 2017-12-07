@@ -28,7 +28,9 @@ namespace Events_TenantUserApp.Tests.ControllerTests
 
             var mockUtilities = new Mock<IUtilities>();
 
-            _accountController = new AccountController(localizer, baseLocalizer, mockTenantRepo.Object, mockCatalogRepo.Object, logger, configuration);
+            var mockDNSClient = new Mock<DnsClient.ILookupClient>();
+
+            _accountController = new AccountController(localizer, baseLocalizer, mockTenantRepo.Object, mockCatalogRepo.Object, logger, configuration, mockDNSClient.Object);
 
         }
 

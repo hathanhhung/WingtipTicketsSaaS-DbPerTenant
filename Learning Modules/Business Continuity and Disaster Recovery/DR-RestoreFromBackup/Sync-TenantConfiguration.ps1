@@ -60,6 +60,7 @@ while (1 -eq 1)
 {
     # Get the active tenant catalog 
     $catalog = Get-Catalog -ResourceGroupName $wtpUser.ResourceGroupName -WtpUser $wtpUser.Name
+    Write-Output "Acquired active tenant catalog: '$($catalog.Database.ServerName)/$($catalog.Database.DatabaseName)'"
     
     $loopStart = (Get-Date).ToUniversalTime()
     $tenantShardLocations = (Get-TenantDatabaseLocations $catalog).Location | Select -Property "Server", "Database"

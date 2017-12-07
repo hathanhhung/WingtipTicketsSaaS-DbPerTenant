@@ -57,8 +57,7 @@ namespace Events_TenantUserApp.Controllers
                         }
                         catch (Microsoft.Azure.SqlDatabase.ElasticScale.ShardManagement.ShardManagementException ex)
                         {
-                            _logger.LogError(0, ex, "A tenant was unavailable in the catalog");
-                           
+                            _logger.LogError(0, ex, "Tenant '" + tenant.TenantName + "' is unavailable in the catalog");                           
                         }
                                                     
                         if (venue != null)
@@ -73,9 +72,10 @@ namespace Events_TenantUserApp.Controllers
             }            
             catch (Exception ex)
             {
-                _logger.LogError(0, ex, "Error in getting all tenants in Events Hub");                
+                _logger.LogError(0, ex, "Error in getting all tenants in Events Hub");
+                return View("Error", ex.Message);              
             }
-            return View("Error");
+            return View("Error");  
 
         }
 

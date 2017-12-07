@@ -223,6 +223,10 @@ while ($true)
   if (($databaseRecoveryJob.State -eq "Completed") -and ($poolRecoveryJob.State -eq "Completed") -and ($serverRecoveryJob.State -eq "Completed") -and ($newTenantProvisioningJob.State -eq "Completed") -and ($tenantRecoveryJob.State -eq "Completed"))
   {
     Remove-Item -Path "$env:TEMP\profile.json" -ErrorAction SilentlyContinue
+
+    #Reset web app in recovery region
+    $recoveryAppName = $config.EventsAppNameStem + $wtpUser.Name + $config.RecoveryRoleSuffix
+    Restart-AzureRmWebApp -ResourceGroupName $recoveryResourceGroupName -Name $recoveryAppName >$null
     break
   }
   else
