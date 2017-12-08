@@ -43,7 +43,7 @@ Deploy the app in a new resource group, and provide a short *user* value that wi
 
 ## Get the disaster recovery management scripts 
 
-The management and recovery scripts that will be used in this tutorial are available in the 'feature-DR-georestore' branch of the [Wingtip Tickets SaaS Database per tenant github repo](https://github.com/Microsoft/WingtipTicketsSaaS-DbPerTenant/tree/feature-AliasExtensions). Make sure to follow the steps in the repo to download and unblock the tutorial scripts on your local machine.
+The management and recovery scripts that will be used in this tutorial are available in the 'feature-DR-georestore' branch of the [Wingtip Tickets SaaS Database per tenant github repo](https://github.com/Microsoft/WingtipTicketsSaaS-DbPerTenant/tree/feature-DR-georestore). Make sure to follow the steps in the repo to download and unblock the tutorial scripts on your local machine.
 
 ## Sync tenant configuration
 
