@@ -37,7 +37,7 @@ The basic application, which includes three pre-defined databases for three venu
 
 3. Clone the repo to your local machine. Or Download and extract the repo to your local machine from a zip file.
 
-4. Open the [GeoRestoreTutorial document](Learning%20Modules\Business%20Continuity%20and%20Disaster%20Recovery\DR-RestoreFromBackup\GeoRestoreTutorial.md) in the '...Learning Modules\Business Continuity and Disaster Recovery\DR-RestoreFromBackup' to start the tutorial for disaster recovery using the Azure SQL database geo-restore capability
+4. Open the [GeoRestoreTutorial document](https://github.com/Microsoft/WingtipTicketsSaaS-DbPerTenant/blob/feature-DR-georestore/Learning%20Modules/Business%20Continuity%20and%20Disaster%20Recovery/DR-RestoreFromBackup/GeorestoreTutorial.md) in the '...Learning Modules\Business Continuity and Disaster Recovery\DR-RestoreFromBackup' to start the tutorial for disaster recovery using the Azure SQL database geo-restore capability
 
 5. Run the demo scripts present in the '...Learning Modules\Business Continuity and Disaster Recovery\DR-RestoreFromBackup' folder.
 
